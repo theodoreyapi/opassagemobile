@@ -6,7 +6,11 @@ import 'package:opassage/core/themes/themes.dart';
 import 'package:opassage/core/widgets/widgets.dart';
 import 'package:opassage/features/home/home.dart';
 import 'package:opassage/features/premium/pages/pages.dart';
+import 'package:opassage/models/rooms_model.dart';
+import 'package:opassage/services/rooms_service.dart';
 import 'package:sizer/sizer.dart';
+
+import '../../../core/utils/utils.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -22,10 +26,13 @@ class _HomePageState extends State<HomePage> {
   int _currentPromoIndex = 0;
   Timer? _promoTimer;
 
+  late Future<List<RoomsModel>> roomsFuture;
+
   @override
   void initState() {
     super.initState();
     _startAutoScroll();
+    roomsFuture = RoomsService.fetchRooms();
   }
 
   void _startAutoScroll() {
@@ -61,7 +68,7 @@ class _HomePageState extends State<HomePage> {
         elevation: 0.5,
         centerTitle: false,
         title: Text(
-          "Salut Job",
+          "Salut ${SharedPreferencesHelper().getString('username')!}",
           style: TextStyle(
             color: appColorWhite,
             fontSize: 20.sp,
@@ -122,7 +129,9 @@ class _HomePageState extends State<HomePage> {
                             fontSize: 11.sp,
                             onPressed: () {
                               Navigator.of(context).push(
-                                MaterialPageRoute(builder: (_) => PremiumSubscriptionScreen()),
+                                MaterialPageRoute(
+                                  builder: (_) => PremiumSubscriptionScreen(),
+                                ),
                               );
                             },
                           ),
@@ -182,7 +191,9 @@ class _HomePageState extends State<HomePage> {
                               contentPadding: EdgeInsets.all(3.w),
                               onTap: () {
                                 Navigator.of(context).push(
-                                  MaterialPageRoute(builder: (_) => HotelPage()),
+                                  MaterialPageRoute(
+                                    builder: (_) => HotelPage(),
+                                  ),
                                 );
                               },
                               title: Text(
@@ -217,7 +228,9 @@ class _HomePageState extends State<HomePage> {
                               contentPadding: EdgeInsets.all(3.w),
                               onTap: () {
                                 Navigator.of(context).push(
-                                  MaterialPageRoute(builder: (_) => ResidencePage()),
+                                  MaterialPageRoute(
+                                    builder: (_) => ResidencePage(),
+                                  ),
                                 );
                               },
                               title: Text(
@@ -283,7 +296,7 @@ class _HomePageState extends State<HomePage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(
                   promoList.length,
-                      (index) => Container(
+                  (index) => Container(
                     margin: const EdgeInsets.symmetric(horizontal: 4),
                     width: _currentPromoIndex == index ? 20 : 8,
                     height: 8,
@@ -317,19 +330,33 @@ class _HomePageState extends State<HomePage> {
               /// GRILLE DE LOGEMENTS
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 4.w),
-                child: GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                    childAspectRatio: 0.75,
-                  ),
-                  itemCount: propertyList.length,
-                  itemBuilder: (context, index) {
-                    final property = propertyList[index];
-                    return PropertyCard(property: property);
+                child: FutureBuilder<List<RoomsModel>>(
+                  future: roomsFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    if (snapshot.hasError) {
+                      return Center(child: Text('Erreur de chargement'));
+                    }
+
+                    final rooms = snapshot.data!;
+                    return GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
+                            childAspectRatio: 0.7,
+                          ),
+                      itemCount: rooms.length,
+                      itemBuilder: (context, index) {
+                        return RoomCard(room: rooms[index]);
+                      },
+                    );
                   },
                 ),
               ),
@@ -337,6 +364,145 @@ class _HomePageState extends State<HomePage> {
               Gap(3.h),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class RoomCard extends StatelessWidget {
+  final RoomsModel room;
+
+  const RoomCard({super.key, required this.room});
+
+  @override
+  Widget build(BuildContext context) {
+    final imageUrl = room.images != null && room.images!.isNotEmpty
+        ? room.images!.first.imagePath
+        : null;
+
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => HotelDetailScreen(room: room)),
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            /// IMAGE
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(12),
+                  ),
+                  child: imageUrl != null
+                      ? Image.network(
+                          imageUrl,
+                          height: 15.h,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                        )
+                      : Container(
+                          height: 15.h,
+                          color: Colors.grey.shade300,
+                          child: const Icon(Icons.image, size: 40),
+                        ),
+                ),
+
+                /// RATING
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.star, color: Colors.amber, size: 16),
+                        const SizedBox(width: 4),
+                        Text(
+                          room.rating ?? '0',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            /// INFO
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    room.name ?? '',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    room.hotelAddress ?? '',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  ),
+                  const SizedBox(height: 8),
+                  RichText(
+                    text: TextSpan(
+                      children: [
+                        TextSpan(
+                          text: room.pricePerNight ?? '0',
+                          style: const TextStyle(
+                            color: Colors.deepPurple,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
+                        ),
+                        TextSpan(
+                          text: ' ${room.monnaie ?? 'FCFA'} /nuit',
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -361,7 +527,9 @@ class PromoCard extends StatelessWidget {
         ),
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Row(
+      child: Column(
+        mainAxisAlignment: .start,
+        crossAxisAlignment: .start,
         children: [
           /// BADGE
           Container(
@@ -372,23 +540,23 @@ class PromoCard extends StatelessWidget {
             ),
             child: Text(
               promo.badge,
-              style: const TextStyle(
+              style: TextStyle(
                 color: Colors.white,
-                fontSize: 12,
+                fontSize: 12.sp,
                 fontWeight: FontWeight.w600,
               ),
             ),
           ),
 
-          Gap(3.w),
+          Gap(1.w),
 
           /// TEXTE
           Expanded(
             child: Text(
               promo.text,
-              style: const TextStyle(
+              style: TextStyle(
                 color: Colors.white,
-                fontSize: 15,
+                fontSize: 15.sp,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -413,7 +581,7 @@ class PropertyCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -426,8 +594,9 @@ class PropertyCard extends StatelessWidget {
           Stack(
             children: [
               ClipRRect(
-                borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(12)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(12),
+                ),
                 child: Image.asset(
                   property.image,
                   height: 15.h,
@@ -441,8 +610,10 @@ class PropertyCard extends StatelessWidget {
                 top: 8,
                 right: 8,
                 child: Container(
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(8),
@@ -484,10 +655,7 @@ class PropertyCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   property.location,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -605,4 +773,3 @@ final List<PropertyModel> propertyList = [
     price: '15 000',
   ),
 ];
-

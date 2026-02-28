@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:gap/gap.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:opassage/features/favoris/favoris.dart';
 import 'package:opassage/features/history/history.dart';
@@ -8,9 +7,7 @@ import 'package:opassage/features/profile/pages/pages.dart';
 import 'package:opassage/features/reservation/pages/reservation_page.dart';
 import 'package:sizer/sizer.dart';
 
-import '../../../core/constants/constants.dart';
 import '../../../core/themes/themes.dart';
-import '../../../core/utils/sessions.dart';
 
 class MenuPage extends StatefulWidget {
   const MenuPage({super.key});

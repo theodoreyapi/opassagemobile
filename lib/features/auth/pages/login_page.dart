@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl_phone_number_input/intl_phone_number_input.dart';
+import 'package:opassage/features/intro/intro.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../../core/constants/constants.dart';
@@ -25,6 +26,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   bool _obscure = true;
+  bool _isEmail = false;
 
   final FocusNode _focusNode = FocusNode();
   bool _isFocused = false;
@@ -46,6 +48,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   var login = TextEditingController();
+  var email = TextEditingController();
   var password = TextEditingController();
 
   String phoneIndicator = "";
@@ -88,26 +91,11 @@ class _LoginPageState extends State<LoginPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Container(
-                          height: 100,
-                          width: 100,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(3.w),
-                            gradient: LinearGradient(
-                              colors: [appColorSecond, appColor],
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                            ),
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(3.w),
-                            child: Padding(
-                              padding: EdgeInsets.all(3.w),
-                              child: Image.asset(
-                                "assets/images/logo-remove.png",
-                                fit: BoxFit.cover,
-                              ),
-                            ),
+                        Padding(
+                          padding: EdgeInsets.all(3.w),
+                          child: Image.asset(
+                            "assets/images/logo.png",
+                            fit: BoxFit.cover,
                           ),
                         ),
                         Gap(1.h),
@@ -128,48 +116,79 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                         Gap(5.h),
-                        Container(
-                          padding: EdgeInsets.symmetric(horizontal: 4.w),
-                          decoration: BoxDecoration(
-                            color: appColorWhite,
-                            borderRadius: BorderRadius.circular(3.w),
-                            border: Border.all(
-                              color: _isFocused
-                                  ? appColor
-                                  : Colors.transparent,
-                              width: 2,
+                        _isEmail
+                            ? InputText(
+                                hintText: "Adresse e-mail",
+                                keyboardType: TextInputType.text,
+                                controller: email,
+                                validatorMessage: "Veuillez saisir votre email",
+                              )
+                            : Container(
+                                padding: EdgeInsets.symmetric(horizontal: 4.w),
+                                decoration: BoxDecoration(
+                                  color: appColorWhite,
+                                  borderRadius: BorderRadius.circular(3.w),
+                                  border: Border.all(
+                                    color: _isFocused
+                                        ? appColor
+                                        : Colors.transparent,
+                                    width: 2,
+                                  ),
+                                ),
+                                child: InternationalPhoneNumberInput(
+                                  focusNode: _focusNode,
+                                  onInputChanged: (PhoneNumber number) {
+                                    phoneIndicator = number.phoneNumber!;
+                                  },
+                                  onInputValidated: (bool value) {},
+                                  errorMessage: "Le numéro est invalide",
+                                  hintText: "Téléphone",
+                                  selectorConfig: const SelectorConfig(
+                                    selectorType:
+                                        PhoneInputSelectorType.BOTTOM_SHEET,
+                                  ),
+                                  ignoreBlank: false,
+                                  autoValidateMode: AutovalidateMode.disabled,
+                                  selectorTextStyle: const TextStyle(
+                                    color: Colors.black,
+                                  ),
+                                  initialValue: number,
+                                  textFieldController: login,
+                                  formatInput: true,
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                        signed: true,
+                                        decimal: true,
+                                      ),
+                                  inputBorder: const OutlineInputBorder(
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  onSaved: (PhoneNumber number) {},
+                                ),
+                              ),
+                        TextButton(
+                          onPressed: () {
+                            setState(() {
+                              _isEmail = !_isEmail;
+                              login.clear();
+                            });
+                          },
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: Text(
+                              _isEmail
+                                  ? "Se connecter avec un numéro de téléphone"
+                                  : "Se connecter avec une adresse e-mail",
+                              textAlign: TextAlign.end,
+                              style: TextStyle(
+                                color: appColorChoise,
+                                fontWeight: FontWeight.normal,
+                                fontStyle: FontStyle.italic,
+                                fontSize: 15.sp,
+                              ),
                             ),
-                          ),
-                          child: InternationalPhoneNumberInput(
-                            focusNode: _focusNode,
-                            onInputChanged: (PhoneNumber number) {
-                              phoneIndicator = number.phoneNumber!;
-                            },
-                            onInputValidated: (bool value) {},
-                            errorMessage: "Le numéro est invalide",
-                            hintText: "Téléphone",
-                            selectorConfig: const SelectorConfig(
-                              selectorType: PhoneInputSelectorType.BOTTOM_SHEET,
-                            ),
-                            ignoreBlank: false,
-                            autoValidateMode: AutovalidateMode.disabled,
-                            selectorTextStyle: const TextStyle(
-                              color: Colors.black,
-                            ),
-                            initialValue: number,
-                            textFieldController: login,
-                            formatInput: true,
-                            keyboardType: const TextInputType.numberWithOptions(
-                              signed: true,
-                              decimal: true,
-                            ),
-                            inputBorder: const OutlineInputBorder(
-                              borderSide: BorderSide.none,
-                            ),
-                            onSaved: (PhoneNumber number) {},
                           ),
                         ),
-                        Gap(2.h),
                         InputPassword(
                           hintText: "Mot de passe",
                           controller: password,
@@ -230,9 +249,7 @@ class _LoginPageState extends State<LoginPage> {
                           child: TextButton(
                             onPressed: () {
                               Navigator.of(context).pushReplacement(
-                                MaterialPageRoute(
-                                  builder: (_) => ChoiseRegisterPage(),
-                                ),
+                                MaterialPageRoute(builder: (_) => IntroPage()),
                               );
                             },
                             child: Text(
@@ -280,10 +297,10 @@ class _LoginPageState extends State<LoginPage> {
           (X509Certificate cert, String host, int port) => true;
 
       final response = await http.post(
-        Uri.parse(ApiUrls.postLogin),
+        Uri.parse(ApiUrls.postAuthLogin),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'login': phoneIndicator.isEmpty ? login.text : phoneIndicator,
+          'login': email.text.isNotEmpty ? email.text : phoneIndicator,
           'password': password.text,
         }),
       );
@@ -291,56 +308,37 @@ class _LoginPageState extends State<LoginPage> {
         utf8.decode(response.bodyBytes),
       );
 
+      print(response.body);
+      print(response.statusCode);
+
       if (response.statusCode == 200) {
+        print("rentre");
         // Sauvegarder toutes les infos utilisateur
+        print(responseData['data']['phone'] ?? "");
         await Future.wait([
-          SharedPreferencesHelper().saveString(
+          SharedPreferencesHelper().saveInteger(
             'identifiant',
-            responseData['data']['id'].toString(),
+            responseData['data']['id'],
           ),
           SharedPreferencesHelper().saveString(
-            'presentation',
-            responseData['data']['presentation'],
+            'username',
+            responseData['data']['username'],
           ),
           SharedPreferencesHelper().saveString(
             'email',
-            responseData['data']['email'],
-          ),
-          SharedPreferencesHelper().saveString(
-            'nom',
-            responseData['data']['nom'],
-          ),
-          SharedPreferencesHelper().saveString(
-            'prenom',
-            responseData['data']['prenom'],
+            responseData['data']['email'] ?? "",
           ),
           SharedPreferencesHelper().saveString(
             'phone',
-            responseData['data']['phone'],
-          ),
-          SharedPreferencesHelper().saveString(
-            'adresse',
-            responseData['data']['adresse'],
+            responseData['data']['phone'] ?? "",
           ),
           SharedPreferencesHelper().saveInteger(
-            'experience',
-            responseData['data']['experience'],
-          ),
-          SharedPreferencesHelper().saveString(
-            'commune',
-            responseData['data']['commune'],
+            'code',
+            responseData['data']['code'],
           ),
           SharedPreferencesHelper().saveString(
             'role',
             responseData['data']['role'],
-          ),
-          SharedPreferencesHelper().saveString(
-            'photo',
-            responseData['data']['photo'],
-          ),
-          SharedPreferencesHelper().saveString(
-            'creation',
-            responseData['data']['creation'],
           ),
         ]);
 
@@ -348,19 +346,11 @@ class _LoginPageState extends State<LoginPage> {
 
         SnackbarHelper.showSuccess(context, responseData['message']);
 
-        if (responseData['data']['role'] == 'user') {
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (context) => const MenuPage()),
-            (route) => false,
-          );
-        } else {
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (context) => const MenuPage()),
-            (route) => false,
-          );
-        }
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const MenuPage()),
+          (route) => false,
+        );
       } else if (response.statusCode == 401) {
         Navigator.pop(context);
         SnackbarHelper.showWarning(context, responseData['message']);

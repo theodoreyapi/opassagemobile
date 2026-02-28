@@ -5,7 +5,7 @@ import '../../themes/themes.dart';
 
 class SubmitButton extends StatelessWidget {
   final String title;
-  final Function() onPressed;
+  final Function()? onPressed;
   final double? height;
   final double? width;
   final double? fontSize;
@@ -16,7 +16,7 @@ class SubmitButton extends StatelessWidget {
   const SubmitButton(
     this.title, {
     super.key,
-    required this.onPressed,
+     this.onPressed,
     this.height,
     this.fontSize,
     this.couleur,
@@ -29,10 +29,10 @@ class SubmitButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: width ?? double.infinity,
-      height: height ?? 12.w,
+      height: height ?? 15.w,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: couleur ?? appColorSecond,
+          backgroundColor: couleur ?? appColor,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(radius ?? 3.w),
           ),
@@ -42,7 +42,7 @@ class SubmitButton extends StatelessWidget {
           title,
           style: TextStyle(
             fontSize: fontSize ?? 18.sp,
-            color: textcouleur ?? appColorBlack,
+            color: textcouleur ?? appColorSecond,
             fontWeight: FontWeight.bold,
           ),
           textAlign: TextAlign.center,

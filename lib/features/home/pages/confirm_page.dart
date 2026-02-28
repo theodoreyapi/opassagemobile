@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:opassage/core/widgets/widgets.dart';
 
 class ReservationConfirmedScreen extends StatelessWidget {
-  const ReservationConfirmedScreen({super.key});
+  ReservationConfirmedScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -68,11 +69,9 @@ class ReservationConfirmedScreen extends StatelessWidget {
                     TextSpan(
                       text: 'Votre réservation à bien été prise en compte,\n',
                     ),
+                    TextSpan(text: 'Merci de surveiller '),
                     TextSpan(
-                      text: 'Merci de surveiller ',
-                    ),
-                    TextSpan(
-                      text: '"Mes Nouvelles Commandes"',
+                      text: '"Réservations"',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: Colors.black87,
@@ -87,27 +86,11 @@ class ReservationConfirmedScreen extends StatelessWidget {
               /// BOUTON VOIR MES COMMANDES
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton(
+                child: SubmitButton(
+                  "Voir mes commandes",
                   onPressed: () {
-                    // Navigation vers mes commandes
                     Navigator.of(context).popUntil((route) => route.isFirst);
                   },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFFC107),
-                    padding: const EdgeInsets.symmetric(vertical: 18),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: const Text(
-                    'Voir mes commandes',
-                    style: TextStyle(
-                      color: Colors.black87,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
                 ),
               ),
 
@@ -133,60 +116,6 @@ class ReservationConfirmedScreen extends StatelessWidget {
           ),
         ),
       ),
-      bottomNavigationBar: _buildBottomNavBar(context),
-    );
-  }
-
-  Widget _buildBottomNavBar(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).padding.bottom,
-        top: 8,
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildNavItem(Icons.home_outlined, 'Accueil', false),
-          _buildNavItem(
-              Icons.calendar_today_outlined, 'mes nouvelles réservations', false),
-          _buildNavItem(Icons.history, 'Historique', false),
-          _buildNavItem(Icons.favorite_border, 'Favoris', false),
-          _buildNavItem(Icons.person_outline, 'Profil', false),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNavItem(IconData icon, String label, bool isActive) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          icon,
-          color: isActive ? const Color(0xFF9C27B0) : Colors.grey,
-          size: 24,
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 9,
-            color: isActive ? const Color(0xFF9C27B0) : Colors.grey,
-          ),
-          textAlign: TextAlign.center,
-          maxLines: 2,
-        ),
-      ],
     );
   }
 }

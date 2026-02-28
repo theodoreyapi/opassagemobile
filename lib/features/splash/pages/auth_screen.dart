@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:opassage/core/themes/themes.dart';
 import 'package:opassage/features/menu/pages/menu_page.dart';
+import 'package:opassage/features/splash/pages/pages.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -11,74 +13,81 @@ class AuthScreen extends StatefulWidget {
 }
 
 class _AuthScreenState extends State<AuthScreen> {
-  final LocalAuthentication _authService = LocalAuthentication();
-  bool _isAuthenticating = false;
-  String _message = '';
+  final LocalAuthentication _auth = LocalAuthentication();
+  final FlutterSecureStorage _storage = const FlutterSecureStorage();
+
+  final bool _isAuthenticating = true;
+  final String _message = 'Vérification de sécurité...';
 
   @override
   void initState() {
     super.initState();
-    _authenticateUser();
+    _checkAuth();
   }
 
-  Future<void> _authenticateUser() async {
-    setState(() {
-      _isAuthenticating = true;
-      _message = 'Authentification en cours...';
-    });
+  /// =========================
+  /// AUTH FLOW
+  /// =========================
+  Future<void> _checkAuth() async {
+    final savedPin = await _storage.read(key: 'user_pin');
+
+    // Aucun PIN enregistré → accès direct (cas rare)
+    if (savedPin == null) {
+      _navigateToHome();
+      return;
+    }
 
     try {
-      // Vérifier si l’appareil supporte l’auth locale
-      bool canCheck = await _authService.canCheckBiometrics;
-      bool isSupported = await _authService.isDeviceSupported();
+      final canUseBiometric =
+          await _auth.canCheckBiometrics &&
+              await _auth.isDeviceSupported();
 
-      if (!canCheck || !isSupported) {
-        setState(() {
-          _message = 'Biométrie non disponible → accès direct';
-          _isAuthenticating = false;
-        });
-       // _navigateToHome();
-        return;
+      if (canUseBiometric) {
+        final authenticated = await _auth.authenticate(
+          localizedReason:
+          "Authentifiez-vous pour accéder à l'application",
+          options: const AuthenticationOptions(
+            biometricOnly: true,
+            stickyAuth: true,
+          ),
+        );
+
+        if (authenticated) {
+          _navigateToHome();
+          return;
+        }
       }
 
-      // Vérifier les types de biométrie disponibles
-      List<BiometricType> availableBiometrics =
-      await _authService.getAvailableBiometrics();
-
-      // Lancer l’authentification
-      bool isAuthenticated = await _authService.authenticate(
-        localizedReason: "Veuillez vous authentifier pour accéder à l'application",
-        options: const AuthenticationOptions(
-          biometricOnly: false, // si false → peut aussi utiliser PIN/code
-          stickyAuth: true,
-          useErrorDialogs: true,
-        ),
-      );
-
-      if (isAuthenticated) {
-        _navigateToHome();
-      } else {
-        setState(() {
-          _message = 'Authentification échouée';
-          _isAuthenticating = false;
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _message = "Erreur d’authentification: $e";
-        _isAuthenticating = false;
-      });
-      // En cas d’erreur, on laisse entrer
-     // _navigateToHome();
+      // 👉 fallback PIN
+      _goToPinUnlock(savedPin);
+    } catch (_) {
+      _goToPinUnlock(savedPin);
     }
   }
 
+  /// =========================
+  /// NAVIGATION
+  /// =========================
   void _navigateToHome() {
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (_) => const MenuPage()),
     );
   }
 
+  void _goToPinUnlock(String savedPin) {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => PinUnlockPage(
+          storedPin: savedPin,
+        //  onSuccess: _navigateToHome,
+        ),
+      ),
+    );
+  }
+
+  /// =========================
+  /// UI
+  /// =========================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -95,32 +104,27 @@ class _AuthScreenState extends State<AuthScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Icon(
-                Icons.fingerprint,
-                size: 100,
+                Icons.lock_outline,
+                size: 90,
                 color: Colors.white,
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 30),
               const Text(
-                'Authentification',
+                'Sécurisation',
                 style: TextStyle(
-                  fontSize: 28,
+                  fontSize: 26,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 15),
+              Text(
+                _message,
+                style: const TextStyle(color: Colors.white70),
+              ),
+              const SizedBox(height: 30),
               if (_isAuthenticating)
-                const CircularProgressIndicator(color: Colors.white)
-              else
-                ElevatedButton.icon(
-                  onPressed: _authenticateUser,
-                  icon: const Icon(Icons.lock_open),
-                  label: const Text('Réessayer'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 30, vertical: 15),
-                  ),
-                ),
+                const CircularProgressIndicator(color: Colors.white),
             ],
           ),
         ),

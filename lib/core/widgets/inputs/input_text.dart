@@ -77,7 +77,7 @@ class _InputTextState extends State<InputText> {
         border: Border.all(
           color: _isFocused
               ? (widget.borderColor ?? appColor)
-              : appColorBorder,
+              : appColor,
           width: 2,
         ),
         borderRadius: BorderRadius.circular(widget.contour ?? 3.w),
@@ -93,7 +93,7 @@ class _InputTextState extends State<InputText> {
             borderRadius: BorderRadius.circular(widget.contour ?? 3.w),
             borderSide: BorderSide.none,
           ),
-          fillColor: widget.colorFille ?? appColorInputFond,
+          fillColor: widget.colorFille ?? appColor.withValues(alpha: .05),
           filled: true,
           hintText: widget.hintText,
           prefixIcon: widget.prefixIcon,

@@ -1,8 +1,40 @@
 import 'package:flutter/material.dart';
+import 'package:opassage/core/widgets/widgets.dart';
 import 'package:opassage/features/home/home.dart';
+import 'package:opassage/models/rooms_model.dart';
+import 'package:opassage/services/reservation_service.dart';
+import 'package:sizer/sizer.dart';
 
-class ReservationStep2Screen extends StatelessWidget {
-  const ReservationStep2Screen({super.key});
+import '../../../core/utils/utils.dart';
+
+class ReservationStep2Screen extends StatefulWidget {
+  RoomsModel? room;
+  final DateTime? startDate;
+  final DateTime? endDate;
+
+  ReservationStep2Screen({super.key, this.room, this.startDate, this.endDate});
+
+  @override
+  State<ReservationStep2Screen> createState() => _ReservationStep2ScreenState();
+}
+
+class _ReservationStep2ScreenState extends State<ReservationStep2Screen> {
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year}';
+  }
+
+  int get _nights {
+    final diff = widget.endDate!.difference(widget.startDate!).inDays;
+    return diff <= 0 ? 1 : diff;
+  }
+
+  double get _unitPrice {
+    return double.tryParse(widget.room!.pricings!.first.price.toString()) ?? 0;
+  }
+
+  double get _totalPrice {
+    return _nights * _unitPrice;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +58,7 @@ class ReservationStep2Screen extends StatelessWidget {
         centerTitle: true,
         actions: [
           Padding(
-            padding: const EdgeInsets.only(right: 16),
+            padding: EdgeInsets.all(3.w),
             child: Row(
               children: [
                 _buildStepIndicator(1, true),
@@ -46,7 +78,7 @@ class ReservationStep2Screen extends StatelessWidget {
         children: [
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(3.w),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -59,7 +91,7 @@ class ReservationStep2Screen extends StatelessWidget {
                       border: Border.all(color: Colors.grey.shade200),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                           blurRadius: 10,
                           offset: const Offset(0, 2),
                         ),
@@ -70,18 +102,17 @@ class ReservationStep2Screen extends StatelessWidget {
                         /// IMAGE
                         ClipRRect(
                           borderRadius: BorderRadius.circular(12),
-                          child: Image.asset(
-                            'assets/images/hotel_room.jpg',
-                            width: 100,
-                            height: 100,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) =>
-                                Container(
-                                  width: 100,
-                                  height: 100,
-                                  color: Colors.grey.shade300,
-                                  child: const Icon(Icons.hotel, size: 40),
-                                ),
+                          child: Image.network(
+                            widget.room!.images!.first.imagePath ?? '',
+                            fit: BoxFit.contain,
+                            height: 30.w,
+                            width: 30.w,
+                            errorBuilder: (_, __, ___) => Container(
+                              width: 100,
+                              height: 100,
+                              color: Colors.grey.shade300,
+                              child: const Icon(Icons.hotel, size: 40),
+                            ),
                           ),
                         ),
 
@@ -92,24 +123,16 @@ class ReservationStep2Screen extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
-                                'Résidence O\'Passage',
+                              Text(
+                                widget.room!.name!,
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                               const SizedBox(height: 4),
-                              const Text(
-                                'Chambre standard, vue sur la ville',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.black54,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              const Text(
-                                'Cocody, riviera 3',
+                              Text(
+                                widget.room!.hotelAddress!,
                                 style: TextStyle(
                                   fontSize: 13,
                                   color: Colors.black54,
@@ -117,12 +140,15 @@ class ReservationStep2Screen extends StatelessWidget {
                               ),
                               const SizedBox(height: 8),
                               Row(
-                                children: const [
-                                  Icon(Icons.star,
-                                      color: Colors.orange, size: 16),
+                                children: [
+                                  Icon(
+                                    Icons.star,
+                                    color: Colors.orange,
+                                    size: 16,
+                                  ),
                                   SizedBox(width: 4),
                                   Text(
-                                    '4.9',
+                                    widget.room!.rating!,
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 14,
@@ -130,7 +156,7 @@ class ReservationStep2Screen extends StatelessWidget {
                                   ),
                                   SizedBox(width: 4),
                                   Text(
-                                    '(120 Avis)',
+                                    '(${widget.room!.review} Avis)',
                                     style: TextStyle(
                                       color: Colors.grey,
                                       fontSize: 12,
@@ -150,24 +176,25 @@ class ReservationStep2Screen extends StatelessWidget {
                   /// DÉTAILS DU SÉJOUR
                   const Text(
                     'Détails du séjour',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                   ),
 
                   const SizedBox(height: 20),
 
-                  /// LISTE DES DÉTAILS
-                  _buildDetailRow('Date', '10 Octobre 2025'),
-                  const Divider(height: 32),
-                  _buildDetailRow('Heure de début', '08:00'),
-                  const Divider(height: 32),
-                  _buildDetailRow('Heure de fin', '14:00'),
-                  const Divider(height: 32),
-                  _buildDetailRow('Durée totale', '1/2 journée (06H)'),
-                  const Divider(height: 32),
-                  _buildDetailRow('Prix Unitaire', '25 000 FCFA'),
+                  _buildDetailRow('Heure de début', widget.room!.hotelIn!),
+                  Divider(height: 32),
+                  _buildDetailRow('Heure de fin', widget.room!.hotelOut!),
+                  Divider(height: 32),
+                  _buildDetailRow('Arrivée', _formatDate(widget.startDate!)),
+                  Divider(height: 32),
+                  _buildDetailRow('Départ', _formatDate(widget.endDate!)),
+                  Divider(height: 32),
+                  _buildDetailRow('Durée', '$_nights nuit(s)'),
+                  Divider(height: 32),
+                  _buildDetailRow(
+                    'Prix Unitaire',
+                    '${widget.room!.pricings!.first.price} FCFA',
+                  ),
 
                   const SizedBox(height: 32),
 
@@ -175,12 +202,12 @@ class ReservationStep2Screen extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF9C27B0).withOpacity(0.08),
+                      color: const Color(0xFF9C27B0).withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: const [
+                      children: [
                         Text(
                           'Coût total',
                           style: TextStyle(
@@ -190,7 +217,7 @@ class ReservationStep2Screen extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          '25 000 FCFA',
+                          '${_totalPrice.toStringAsFixed(0)} FCFA',
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
@@ -219,46 +246,87 @@ class ReservationStep2Screen extends StatelessWidget {
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, -2),
                 ),
               ],
             ),
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  // Navigation vers l'écran de confirmation
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ReservationConfirmedScreen(),
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFFC107),
-                  padding: const EdgeInsets.symmetric(vertical: 18),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 0,
-                ),
-                child: const Text(
-                  'Valider',
-                  style: TextStyle(
-                    color: Colors.black87,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
+            child: isLoadingFavorite
+                ? SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : SubmitButton("Valider", onPressed: _toggleReservation),
           ),
         ],
       ),
     );
+  }
+
+  String formatDateForApi(DateTime date) {
+    return date.toIso8601String().split('T').first;
+  }
+
+  bool isLoadingFavorite = false;
+
+  Future<void> _toggleReservation() async {
+    if (isLoadingFavorite) return;
+
+    setState(() => isLoadingFavorite = true);
+
+    // ✅ récupérer l'identifiant correctement
+    final int? userIdStr = SharedPreferencesHelper().getInt('identifiant');
+
+    if (userIdStr == null) {
+      setState(() => isLoadingFavorite = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Vous n'êtes pas connecté"),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final result = await ReservationService.createReservation(
+      userId: userIdStr,
+      roomId: widget.room!.idRoom!,
+      start: formatDateForApi(widget.startDate!),
+      end: formatDateForApi(widget.endDate!),
+    );
+
+    setState(() => isLoadingFavorite = false);
+
+    if (result['status'] == 200) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => ReservationConfirmedScreen()),
+      );
+    } else {
+      print(extractErrorMessage(result['body']['message']));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(extractErrorMessage(result['body']['message'])),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  String extractErrorMessage(dynamic message) {
+    if (message is String) {
+      return message;
+    }
+
+    if (message is Map) {
+      return message.values
+          .map((e) => e is List ? e.join(', ') : e.toString())
+          .join('\n');
+    }
+
+    return 'Une erreur est survenue';
   }
 
   Widget _buildStepIndicator(int step, bool isActive) {
@@ -288,10 +356,7 @@ class ReservationStep2Screen extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 15,
-            color: Colors.black87,
-          ),
+          style: const TextStyle(fontSize: 15, color: Colors.black87),
         ),
         Text(
           value,

@@ -1,24 +1,78 @@
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:gap/gap.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:intl/intl.dart';
+import 'package:opassage/core/themes/themes.dart';
+import 'package:opassage/core/widgets/widgets.dart';
 import 'package:opassage/features/home/home.dart';
+import 'package:opassage/models/rooms_model.dart';
+import 'package:opassage/services/favorite_service.dart';
+import 'package:sizer/sizer.dart';
+
+import '../../../core/utils/utils.dart';
 
 class HotelDetailScreen extends StatefulWidget {
-  const HotelDetailScreen({super.key});
+  RoomsModel? room;
+
+  HotelDetailScreen({super.key, this.room});
 
   @override
   State<HotelDetailScreen> createState() => _HotelDetailScreenState();
 }
 
 class _HotelDetailScreenState extends State<HotelDetailScreen> {
-  final Set<Marker> _markers = {};
-  final LatLng _hotelPosition = const LatLng(5.3599517, -4.0082563);
+  LatLng get hotelPosition {
+    final lat = double.tryParse(room.latitude ?? '');
+    final lng = double.tryParse(room.longitude ?? '');
+    return LatLng(lat ?? 5.3599, lng ?? -4.0082);
+  }
+
+  bool isFavorite = false;
+  bool isLoadingFavorite = false;
 
   @override
   void initState() {
     super.initState();
-    _markers.add(
-      Marker(markerId: const MarkerId('hotel'), position: _hotelPosition),
+  }
+
+  late final room = widget.room!;
+  late final images = room.images ?? [];
+  late final pricings = room.pricings ?? [];
+  late final amenities = room.amenities ?? [];
+
+  Future<void> _toggleFavorite() async {
+    if (isLoadingFavorite) return;
+
+    setState(() => isLoadingFavorite = true);
+
+    // ✅ récupérer l'identifiant correctement
+    final int? userIdStr = SharedPreferencesHelper().getInt('identifiant');
+
+    if (userIdStr == null) {
+      setState(() => isLoadingFavorite = false);
+      _showToast("Utilisateur non connecté");
+      return;
+    }
+
+    final result = await FavoriteService.addFavorite(
+      userId: userIdStr,
+      roomId: widget.room!.idRoom!,
+      hotelId: widget.room!.idHotel!,
     );
+
+    setState(() => isLoadingFavorite = false);
+
+    if (result['status'] == 200) {
+      setState(() => isFavorite = true);
+      _showToast('Ajouté aux favoris ❤️');
+    } else {
+      _showToast(result['body']['message'] ?? 'Erreur');
+    }
+  }
+
+  void _showToast(String message) {
+    Fluttertoast.showToast(msg: message, gravity: ToastGravity.BOTTOM);
   }
 
   @override
@@ -36,13 +90,12 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
                 Stack(
                   children: [
                     /// IMAGE PRINCIPALE
-                    Image.asset(
-                      'assets/images/hotel_room.jpg',
+                    Image.network(
+                      images.isNotEmpty ? images.first.imagePath! : '',
                       width: double.infinity,
                       height: 300,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Container(
-                        width: double.infinity,
+                      errorBuilder: (_, __, ___) => Container(
                         height: 300,
                         color: Colors.grey.shade300,
                         child: const Icon(Icons.hotel, size: 80),
@@ -72,11 +125,21 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
                       child: CircleAvatar(
                         backgroundColor: Colors.white,
                         child: IconButton(
-                          icon: const Icon(
-                            Icons.favorite_border,
-                            color: Colors.black,
-                          ),
-                          onPressed: () {},
+                          icon: isLoadingFavorite
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Icon(
+                                  isFavorite
+                                      ? Icons.favorite
+                                      : Icons.favorite_border,
+                                  color: isFavorite ? Colors.red : Colors.black,
+                                ),
+                          onPressed: _toggleFavorite,
                         ),
                       ),
                     ),
@@ -116,42 +179,21 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Résidence O\'Passage',
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Row(
-                                  children: const [
-                                    Icon(
-                                      Icons.location_on,
-                                      color: Color(0xFF9C27B0),
-                                      size: 18,
-                                    ),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      'Cocody, riviera 3',
-                                      style: TextStyle(
-                                        color: Color(0xFF9C27B0),
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
+                            child: Text(
+                              widget.room!.name!,
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.end,
-                            children: const [
+                            children: [
                               Text(
-                                '25 000 CFA',
+                                pricings.isNotEmpty
+                                    ? formatPrice(pricings.first.price)
+                                    : "—",
                                 style: TextStyle(
                                   fontSize: 22,
                                   fontWeight: FontWeight.bold,
@@ -168,6 +210,23 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
                           ),
                         ],
                       ),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.location_on,
+                            color: Color(0xFF9C27B0),
+                            size: 18,
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            room.hotelAddress ?? '',
+                            style: TextStyle(
+                              color: const Color(0xFF9C27B0),
+                              fontSize: 14.sp,
+                            ),
+                          ),
+                        ],
+                      ),
 
                       const SizedBox(height: 16),
 
@@ -178,12 +237,12 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
                           vertical: 8,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF9C27B0).withOpacity(0.1),
+                          color: const Color(0xFF9C27B0).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
-                          children: const [
+                          children: [
                             Icon(
                               Icons.calendar_today,
                               color: Color(0xFF9C27B0),
@@ -191,8 +250,8 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
                             ),
                             SizedBox(width: 8),
                             Text(
-                              '124 réservations réalisées',
-                              style: TextStyle(
+                              '${room.nbreReservation ?? 0} réservations réalisées',
+                              style: const TextStyle(
                                 color: Color(0xFF9C27B0),
                                 fontSize: 13,
                                 fontWeight: FontWeight.w500,
@@ -202,30 +261,26 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
                         ),
                       ),
 
-                      const SizedBox(height: 24),
+                      SizedBox(height: 24),
 
                       /// DESCRIPTION DE L'ÉTABLISSEMENT
-                      const Text(
+                      Text(
                         'Description de l\'établissement',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'Appartement moderne et lumineux idéal pour vos séjours à Abidjan. Profitez d\'un espace calme, sécurisé et entièrement équipé pour le travail comme pour se détente',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.black87,
-                          height: 1.5,
-                        ),
+                      SizedBox(height: 12),
+                      Text(
+                        room.descEtabli?.isNotEmpty == true
+                            ? room.descEtabli!
+                            : "Aucune description disponible",
                       ),
-
                       const SizedBox(height: 24),
 
                       /// DESCRIPTION DE L'HÉBERGEMENT
-                      const Text(
+                      Text(
                         'Description de l\'hébergement',
                         style: TextStyle(
                           fontSize: 18,
@@ -233,13 +288,10 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      const Text(
-                        'Appartement moderne et lumineux idéal pour vos séjours à Abidjan. Profitez d\'un espace calme, sécurisé et entièrement équipé comme pour se détente',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.black87,
-                          height: 1.5,
-                        ),
+                      Text(
+                        room.descHeberge?.isNotEmpty == true
+                            ? room.descHeberge!
+                            : "Aucune information disponible",
                       ),
 
                       const SizedBox(height: 20),
@@ -251,17 +303,23 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
                         children: [
                           _buildFeatureChip(
                             Icons.meeting_room,
-                            'Studio premium',
+                            room.name ?? '',
                           ),
-                          _buildFeatureChip(Icons.bed, '2 chambres'),
+                          _buildFeatureChip(
+                            Icons.bed,
+                            '${room.bedrooms ?? 0} chambres',
+                          ),
                           _buildFeatureChip(
                             Icons.bathtub_outlined,
-                            '3 salles de bain',
+                            '${room.bathrooms ?? 0} salles de bain',
                           ),
-                          _buildFeatureChip(Icons.chair_outlined, '1 Salon'),
                           _buildFeatureChip(
-                            Icons.kitchen_outlined,
-                            'Cuisine équipée',
+                            Icons.chair_outlined,
+                            '${room.livingRooms ?? 0} salon',
+                          ),
+                          _buildFeatureChip(
+                            Icons.people,
+                            '${room.capacity ?? 0} personnes',
                           ),
                         ],
                       ),
@@ -276,7 +334,6 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 16),
 
                       /// GRILLE D'ÉQUIPEMENTS
                       GridView.count(
@@ -285,31 +342,9 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
                         crossAxisCount: 4,
                         mainAxisSpacing: 16,
                         crossAxisSpacing: 16,
-                        children: [
-                          _buildAmenityItem(Icons.hot_tub_outlined, 'Jacuzzi'),
-                          _buildAmenityItem(
-                            Icons.restaurant_outlined,
-                            'Restaurant',
-                          ),
-                          _buildAmenityItem(Icons.pool_outlined, 'Piscine'),
-                          _buildAmenityItem(Icons.wifi, 'Wifi HD'),
-                          _buildAmenityItem(
-                            Icons.local_parking_outlined,
-                            'Parking\nPrivé',
-                          ),
-                          _buildAmenityItem(
-                            Icons.security_outlined,
-                            'Sécurité\n24h/24',
-                          ),
-                          _buildAmenityItem(
-                            Icons.fitness_center_outlined,
-                            'Salle de\nsport',
-                          ),
-                          _buildAmenityItem(
-                            Icons.local_laundry_service_outlined,
-                            'Machine\nà laver',
-                          ),
-                        ],
+                        children: amenities.map((amenity) {
+                          return _buildAmenityItem(amenity.icon, amenity.name);
+                        }).toList(),
                       ),
 
                       const SizedBox(height: 32),
@@ -324,9 +359,14 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      _buildPricingRow('Pour 1 nuitée', '25 000 FCFA'),
-                      _buildPricingRow('Pour 3 nuitées', '70 000 FCFA'),
-                      _buildPricingRow('pour 1 semaine', '150 000 FCFA'),
+                      Column(
+                        children: pricings.map((p) {
+                          return _buildPricingRow(
+                            p.label ?? '',
+                            formatPrice(p.price),
+                          );
+                        }).toList(),
+                      ),
 
                       const SizedBox(height: 32),
 
@@ -348,16 +388,25 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
                         ),
                         child: Column(
                           children: [
-                            _buildPolicyRow('Arrivée (Check-in)', 'Dès 14:00'),
-                            const Divider(height: 24),
+                            _buildPolicyRow(
+                              'Arrivée (Check-in)',
+                              room.hotelIn != null
+                                  ? 'Dès ${room.hotelIn}'
+                                  : '—',
+                            ),
+                            Divider(height: 24),
                             _buildPolicyRow(
                               'Départ (Check-out)',
-                              'Avant 12:00',
+                              room.hotelOut != null
+                                  ? 'Avant ${room.hotelOut}'
+                                  : '—',
                             ),
-                            const Divider(height: 24),
+                            Divider(height: 24),
                             _buildPolicyRow(
-                              'Politique D\'annulation',
-                              'Gratuite jusqu\'à 48H',
+                              'Annulation',
+                              room.freeCancel != null
+                                  ? 'Gratuite jusqu\'à ${room.freeCancel}h'
+                                  : '—',
                             ),
                           ],
                         ),
@@ -401,8 +450,8 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
 
                       Row(
                         children: [
-                          const Text(
-                            '5,0',
+                          Text(
+                            widget.room!.rating!,
                             style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
@@ -420,8 +469,8 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
                             ),
                           ),
                           const SizedBox(width: 12),
-                          const Text(
-                            '32 Avis',
+                          Text(
+                            '${widget.room!.review!} Avis',
                             style: TextStyle(fontSize: 16, color: Colors.grey),
                           ),
                         ],
@@ -438,8 +487,8 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      const Text(
-                        'Cocody, Riviera 3, Abidjan',
+                      Text(
+                        room.hotelAddress ?? '',
                         style: TextStyle(fontSize: 14, color: Colors.grey),
                       ),
                       const SizedBox(height: 16),
@@ -451,10 +500,15 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
                           height: 200,
                           child: GoogleMap(
                             initialCameraPosition: CameraPosition(
-                              target: _hotelPosition,
+                              target: hotelPosition,
                               zoom: 14,
                             ),
-                            markers: _markers,
+                            markers: {
+                              Marker(
+                                markerId: const MarkerId('hotel'),
+                                position: hotelPosition,
+                              ),
+                            },
                             zoomControlsEnabled: false,
                             scrollGesturesEnabled: false,
                             zoomGesturesEnabled: false,
@@ -488,7 +542,7 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
                 color: Colors.white,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 10,
                     offset: const Offset(0, -2),
                   ),
@@ -500,51 +554,38 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
-                      children: const [
-                        Text(
+                      children: [
+                        const Text(
                           'Prix total',
                           style: TextStyle(fontSize: 13, color: Colors.grey),
                         ),
-                        SizedBox(height: 4),
+                        const SizedBox(height: 4),
                         Text(
-                          '25 000 F',
+                          pricings.isNotEmpty
+                              ? formatPrice(pricings.first.price)
+                              : '—',
                           style: TextStyle(
-                            fontSize: 26,
+                            fontSize: 20.sp,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF9C27B0),
+                            color: appColor,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  Gap(1.w),
                   Expanded(
-                    flex: 2,
-                    child: ElevatedButton(
+                    child: SubmitButton(
+                      "Réserver",
                       onPressed: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => ReservationStep1Screen(),
+                            builder: (context) =>
+                                ReservationStep1Screen(room: widget.room),
                           ),
                         );
                       },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFFC107),
-                        padding: const EdgeInsets.symmetric(vertical: 18),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: const Text(
-                        'Réserver',
-                        style: TextStyle(
-                          color: Colors.black87,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
                     ),
                   ),
                 ],
@@ -554,6 +595,19 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
         ],
       ),
     );
+  }
+
+  String formatPrice(String? price) {
+    if (price == null) return '';
+
+    final number = double.tryParse(price) ?? 0;
+    final formatter = NumberFormat.currency(
+      locale: 'fr_FR',
+      symbol: 'FCFA',
+      decimalDigits: 0,
+    );
+
+    return formatter.format(number);
   }
 
   Widget _buildImageButton({
@@ -612,16 +666,36 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
     );
   }
 
-  Widget _buildAmenityItem(IconData icon, String label) {
+  Widget _buildAmenityItem(String? iconUrl, String? label) {
     return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, color: const Color(0xFF9C27B0), size: 32),
-        const SizedBox(height: 8),
+        Container(
+          width: 52,
+          height: 52,
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(3.w),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(10),
+            child: Image.network(
+              iconUrl ?? '',
+              fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) => Icon(
+                Icons.check_circle_outline,
+                color: Colors.grey.shade400,
+                size: 26,
+              ),
+            ),
+          ),
+        ),
         Text(
-          label,
+          label ?? '',
           textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 11, color: Colors.grey, height: 1.2),
+          style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w500),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
         ),
       ],
     );

@@ -1,18 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:opassage/core/themes/themes.dart';
+import 'package:opassage/core/widgets/widgets.dart';
 import 'package:opassage/features/home/home.dart';
+import 'package:opassage/models/rooms_model.dart';
+import 'package:sizer/sizer.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 class ReservationStep1Screen extends StatefulWidget {
-  const ReservationStep1Screen({super.key});
+  RoomsModel? room;
+
+  ReservationStep1Screen({super.key, this.room});
 
   @override
   State<ReservationStep1Screen> createState() => _ReservationStep1ScreenState();
 }
 
 class _ReservationStep1ScreenState extends State<ReservationStep1Screen> {
-  DateTime _selectedDay = DateTime.now();
+  DateTime? _startDate;
+  DateTime? _endDate;
   DateTime _focusedDay = DateTime.now();
-  String _selectedTimeSlot = 'matin';
 
   @override
   Widget build(BuildContext context) {
@@ -63,10 +69,7 @@ class _ReservationStep1ScreenState extends State<ReservationStep1Screen> {
                   /// TITRE
                   const Text(
                     'Choisir une date',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                   ),
 
                   const SizedBox(height: 20),
@@ -82,62 +85,33 @@ class _ReservationStep1ScreenState extends State<ReservationStep1Screen> {
                       firstDay: DateTime.now(),
                       lastDay: DateTime.now().add(const Duration(days: 365)),
                       focusedDay: _focusedDay,
-                      selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-                      onDaySelected: (selectedDay, focusedDay) {
+                      rangeStartDay: _startDate,
+                      rangeEndDay: _endDate,
+                      calendarFormat: CalendarFormat.month,
+                      rangeSelectionMode: RangeSelectionMode.enforced,
+                      onRangeSelected: (start, end, focusedDay) {
                         setState(() {
-                          _selectedDay = selectedDay;
+                          _startDate = start;
+                          _endDate = end;
                           _focusedDay = focusedDay;
                         });
                       },
-                      calendarFormat: CalendarFormat.month,
-                      headerStyle: HeaderStyle(
-                        titleCentered: false,
+                      headerStyle: const HeaderStyle(
                         formatButtonVisible: false,
-                        titleTextStyle: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        leftChevronIcon: const Icon(
-                          Icons.chevron_left,
-                          color: Colors.black,
-                        ),
-                        rightChevronIcon: const Icon(
-                          Icons.chevron_right,
-                          color: Colors.black,
-                        ),
                       ),
                       calendarStyle: CalendarStyle(
-                        todayDecoration: BoxDecoration(
-                          color: Colors.grey.shade300,
-                          shape: BoxShape.circle,
-                        ),
-                        selectedDecoration: const BoxDecoration(
+                        rangeStartDecoration: const BoxDecoration(
                           color: Color(0xFF9C27B0),
                           shape: BoxShape.circle,
                         ),
-                        defaultTextStyle: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.black,
+                        rangeEndDecoration: const BoxDecoration(
+                          color: Color(0xFF9C27B0),
+                          shape: BoxShape.circle,
                         ),
-                        weekendTextStyle: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.black,
-                        ),
-                        outsideTextStyle: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey.shade300,
-                        ),
-                      ),
-                      daysOfWeekStyle: DaysOfWeekStyle(
-                        weekdayStyle: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade600,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        weekendStyle: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade600,
-                          fontWeight: FontWeight.w500,
+                        rangeHighlightColor: Color(0xFF9C27B0),
+                        selectedDecoration: const BoxDecoration(
+                          color: Color(0xFF9C27B0),
+                          shape: BoxShape.circle,
                         ),
                       ),
                     ),
@@ -147,9 +121,9 @@ class _ReservationStep1ScreenState extends State<ReservationStep1Screen> {
 
                   /// DATE SÉLECTIONNÉE
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(2.w),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF9C27B0).withOpacity(0.1),
+                      color: appColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
@@ -160,106 +134,88 @@ class _ReservationStep1ScreenState extends State<ReservationStep1Screen> {
                           size: 24,
                         ),
                         const SizedBox(width: 12),
-                        Text(
-                          _formatSelectedDate(),
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
+                        Expanded(
+                          child: Text(
+                            _dateLabel,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
-
-                  const SizedBox(height: 32),
-
-                  /// TITRE CRÉNEAU HORAIRE
-                  const Text(
-                    'Choisir un créneau horaire',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  /// OPTION MATIN
-                  _buildTimeSlotOption(
-                    title: 'Matin',
-                    time: '08 : 00 - 14 : 00',
-                    value: 'matin',
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  /// OPTION SOIR
-                  _buildTimeSlotOption(
-                    title: 'Soir',
-                    time: '14 : 00 - 20 : 00',
-                    value: 'soir',
-                  ),
-
-                  const SizedBox(height: 100),
                 ],
               ),
             ),
           ),
 
           /// BOUTON SUIVANT
-          Container(
-            padding: EdgeInsets.only(
-              left: 20,
-              right: 20,
-              bottom: MediaQuery.of(context).padding.bottom + 16,
-              top: 16,
-            ),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, -2),
-                ),
-              ],
-            ),
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  // Navigation vers l'étape 2
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ReservationStep2Screen(),
+          Padding(
+            padding: EdgeInsets.all(4.w),
+            child: SubmitButton(
+              "Suivant",
+              onPressed: () {
+
+                if (_endDate == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Veuillez sélectionner une date de départ',
+                      ),
+                      backgroundColor: Colors.red,
                     ),
                   );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFFC107),
-                  padding: const EdgeInsets.symmetric(vertical: 18),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                  return;
+                }
+
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ReservationStep2Screen(
+                      room: widget.room,
+                      startDate: _startDate,
+                      endDate:
+                          _endDate ?? _startDate!.add(const Duration(days: 1)),
+                    ),
                   ),
-                  elevation: 0,
-                ),
-                child: const Text(
-                  'Suivant',
-                  style: TextStyle(
-                    color: Colors.black87,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
+                );
+              },
             ),
           ),
         ],
       ),
-      bottomNavigationBar: _buildBottomNavBar(),
     );
+  }
+
+  String get _dateLabel {
+    if (_startDate == null) return 'Aucune date sélectionnée';
+
+    if (_endDate == null || isSameDay(_startDate!, _endDate!)) {
+      return 'Séjour le ${_formatDate(_startDate!)}';
+    }
+
+    return 'Du ${_formatDate(_startDate!)} au ${_formatDate(_endDate!)}';
+  }
+
+  String _formatDate(DateTime date) {
+    final months = [
+      'janvier',
+      'février',
+      'mars',
+      'avril',
+      'mai',
+      'juin',
+      'juillet',
+      'août',
+      'septembre',
+      'octobre',
+      'novembre',
+      'décembre',
+    ];
+    return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
 
   Widget _buildStepIndicator(int step, bool isActive) {
@@ -280,141 +236,6 @@ class _ReservationStep1ScreenState extends State<ReservationStep1Screen> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildTimeSlotOption({
-    required String title,
-    required String time,
-    required String value,
-  }) {
-    final isSelected = _selectedTimeSlot == value;
-
-    return GestureDetector(
-      onTap: () => setState(() => _selectedTimeSlot = value),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? const Color(0xFF9C27B0) : Colors.grey.shade300,
-            width: isSelected ? 2 : 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    time,
-                    style: TextStyle(
-                      fontSize: 15,
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              width: 24,
-              height: 24,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: isSelected
-                      ? const Color(0xFF9C27B0)
-                      : Colors.grey.shade400,
-                  width: 2,
-                ),
-                color: isSelected ? const Color(0xFF9C27B0) : Colors.transparent,
-              ),
-              child: isSelected
-                  ? const Center(
-                child: Icon(
-                  Icons.circle,
-                  size: 12,
-                  color: Colors.white,
-                ),
-              )
-                  : null,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _formatSelectedDate() {
-    final months = [
-      'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
-      'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'
-    ];
-    final days = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
-
-    return '${days[_selectedDay.weekday - 1]} ${_selectedDay.day} ${months[_selectedDay.month - 1]} ${_selectedDay.year}';
-  }
-
-  Widget _buildBottomNavBar() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).padding.bottom,
-        top: 8,
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildNavItem(Icons.home_outlined, 'Accueil', false),
-          _buildNavItem(Icons.calendar_today_outlined, 'mes nouvelles réservations', false),
-          _buildNavItem(Icons.history, 'Historique', false),
-          _buildNavItem(Icons.favorite_border, 'Favoris', false),
-          _buildNavItem(Icons.person_outline, 'Profil', false),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNavItem(IconData icon, String label, bool isActive) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          icon,
-          color: isActive ? const Color(0xFF9C27B0) : Colors.grey,
-          size: 24,
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 9,
-            color: isActive ? const Color(0xFF9C27B0) : Colors.grey,
-          ),
-          textAlign: TextAlign.center,
-          maxLines: 2,
-        ),
-      ],
     );
   }
 }

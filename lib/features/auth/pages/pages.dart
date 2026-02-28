@@ -6,3 +6,4 @@ export 'code_otp_page.dart';
 export 'new_password_page.dart';
 export 'document_page.dart';
 export 'choise_register_page.dart';
+export 'create_pin_page.dart';

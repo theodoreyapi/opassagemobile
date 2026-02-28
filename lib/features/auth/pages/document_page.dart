@@ -246,7 +246,7 @@ class _DocumentPageState extends State<DocumentPage> {
       },
     );
 
-    var uri = Uri.parse(ApiUrls.postRegister);
+    var uri = Uri.parse(ApiUrls.postAuthRegisterOne);
 
     var request = http.MultipartRequest('POST', uri)
       ..fields['nom'] = widget.nom!

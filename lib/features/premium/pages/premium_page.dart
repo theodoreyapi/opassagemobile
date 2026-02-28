@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:opassage/features/premium/pages/subscrip_page.dart';
+import 'package:opassage/models/abonnement_model.dart';
+import 'package:opassage/services/abonne_service.dart';
 
 class PremiumSubscriptionScreen extends StatefulWidget {
   @override
@@ -8,7 +11,79 @@ class PremiumSubscriptionScreen extends StatefulWidget {
 }
 
 class _PremiumSubscriptionScreenState extends State<PremiumSubscriptionScreen> {
-  String selectedPlan = "Mensuelle";
+  List<AbonnementModel> plans = [];
+  AbonnementModel? selectedPlan;
+  bool isLoading = true;
+
+  late final DateTime startDate;
+
+  @override
+  void initState() {
+    super.initState();
+    startDate = DateTime.now();
+    _loadSubscriptions();
+  }
+
+  Future<void> _loadSubscriptions() async {
+    try {
+      final result = await SubscriptionApi.fetchSubscriptions();
+      setState(() {
+        plans = result;
+        selectedPlan = plans.isNotEmpty ? plans.first : null;
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() => isLoading = false);
+    }
+  }
+
+  int getDurationInMonths(String? durationType) {
+    switch (durationType) {
+      case 'monthly':
+        return 1;
+      case 'quarterly':
+        return 3;
+      case 'semiannual':
+        return 6;
+      case 'yearly':
+        return 12;
+      default:
+        return 1;
+    }
+  }
+
+  String formatDate(DateTime date) {
+    return DateFormat('dd MMM', 'fr').format(date);
+  }
+
+  String formatMonthYear(DateTime date) {
+    return DateFormat('MMMM yyyy', 'fr').format(date);
+  }
+
+  int get durationMonths {
+    return getDurationInMonths(selectedPlan?.durationType);
+  }
+
+  DateTime get endDate {
+    return DateTime(
+      startDate.year,
+      startDate.month + durationMonths,
+      startDate.day,
+    );
+  }
+
+  String formatPrice(String? price) {
+    if (price == null) return '';
+
+    final number = double.tryParse(price) ?? 0;
+    final formatter = NumberFormat.currency(
+      locale: 'fr_FR',
+      symbol: 'FCFA',
+      decimalDigits: 0,
+    );
+
+    return formatter.format(number);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -90,10 +165,19 @@ class _PremiumSubscriptionScreenState extends State<PremiumSubscriptionScreen> {
 
             // Section Formules
             _buildSectionTitle("Choisissez votre formule"),
-            _buildPlanOption("Formule mensuelle", "2 000 FCFA"),
-            _buildPlanOption("Formule Trimestrielle", "5 500 FCFA"),
-            _buildPlanOption("Formule Semestrielle", "10 500 FCFA"),
-            _buildPlanOption("Formule Annuelle", "20 500 FCFA"),
+
+            if (isLoading)
+              const Center(child: CircularProgressIndicator())
+            else
+              Column(
+                children: plans.map((plan) {
+                  final isSelected =
+                      selectedPlan?.idSubscriptionPlan ==
+                      plan.idSubscriptionPlan;
+
+                  return _buildPlanOption(plan, isSelected);
+                }).toList(),
+              ),
 
             SizedBox(height: 30),
 
@@ -126,22 +210,22 @@ class _PremiumSubscriptionScreenState extends State<PremiumSubscriptionScreen> {
                         ],
                       ),
                       Text(
-                        "1 Mois",
+                        getDurationLabel(selectedPlan?.durationType),
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
                   Divider(height: 30),
                   Text(
-                    "Décembre 2025",
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    formatMonthYear(startDate),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
                   ),
                   SizedBox(height: 15),
-                  // Simulation d'un calendrier simplifié
-                  _buildCalendarPlaceholder(),
-                  SizedBox(height: 15),
                   Text(
-                    "Valable du 06 Déc au 06 Janv",
+                    "Valable du ${formatDate(startDate)} au ${formatDate(endDate)}",
                     style: TextStyle(
                       color: Colors.purple,
                       fontWeight: FontWeight.bold,
@@ -159,24 +243,25 @@ class _PremiumSubscriptionScreenState extends State<PremiumSubscriptionScreen> {
               width: double.infinity,
               height: 55,
               child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => SubscriptionSuccessScreen(),
-                    ),
-                  );
-                },
+                onPressed: selectedPlan == null
+                    ? null
+                    : () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => SubscriptionSuccessScreen(),
+                          ),
+                        );
+                      },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFFFFD700),
+                  backgroundColor: const Color(0xFFFFD700),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  elevation: 0,
                 ),
                 child: Text(
-                  "Payer 2 000 FCFA",
-                  style: TextStyle(
+                  "Payer ${formatPrice(selectedPlan?.price)}",
+                  style: const TextStyle(
                     color: Colors.black,
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
@@ -191,7 +276,22 @@ class _PremiumSubscriptionScreenState extends State<PremiumSubscriptionScreen> {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  String getDurationLabel(String? type) {
+    switch (type) {
+      case 'monthly':
+        return '1 Mois';
+      case 'quarterly':
+        return '3 Mois';
+      case 'semiannual':
+        return '6 Mois';
+      case 'yearly':
+        return '12 Mois';
+      default:
+        return '';
+    }
+  }
+
+   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 15),
       child: Text(
@@ -224,13 +324,12 @@ class _PremiumSubscriptionScreenState extends State<PremiumSubscriptionScreen> {
     );
   }
 
-  Widget _buildPlanOption(String title, String price) {
-    bool isSelected = selectedPlan == title.split(" ")[1];
+  Widget _buildPlanOption(AbonnementModel plan, bool isSelected) {
     return GestureDetector(
-      onTap: () => setState(() => selectedPlan = title.split(" ")[1]),
+      onTap: () => setState(() => selectedPlan = plan),
       child: Container(
-        margin: EdgeInsets.only(bottom: 10),
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(10),
@@ -241,17 +340,20 @@ class _PremiumSubscriptionScreenState extends State<PremiumSubscriptionScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(title, style: TextStyle(fontWeight: FontWeight.w500)),
+            Text(
+              plan.name ?? '',
+              style: const TextStyle(fontWeight: FontWeight.w500),
+            ),
             Row(
               children: [
                 Text(
-                  price,
-                  style: TextStyle(
+                  formatPrice(plan.price),
+                  style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     color: Colors.purple,
                   ),
                 ),
-                SizedBox(width: 10),
+                const SizedBox(width: 10),
                 Icon(
                   isSelected
                       ? Icons.radio_button_checked

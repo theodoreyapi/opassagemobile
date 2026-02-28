@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:opassage/core/themes/app_color.dart';
-import 'package:opassage/features/reservation/pages/detail_page.dart';
+import 'package:opassage/core/utils/utils.dart';
+import 'package:opassage/features/reservation/reservation.dart';
+import 'package:opassage/models/reservation_model.dart';
+import 'package:opassage/services/reservation_service.dart';
+import 'package:sizer/sizer.dart';
 
 class MyNewBookingsScreen extends StatefulWidget {
   const MyNewBookingsScreen({super.key});
@@ -12,36 +16,15 @@ class MyNewBookingsScreen extends StatefulWidget {
 class _MyNewBookingsScreenState extends State<MyNewBookingsScreen> {
   final TextEditingController _searchController = TextEditingController();
 
-  // Liste des réservations
-  final List<BookingModel> bookings = [
-    BookingModel(
-      type: 'Repos/Dayuse',
-      roomType: 'Chambre standard',
-      price: '15 000 FCA',
-      hotelName: 'Hôtel le refuge',
-      location: 'Marcory, Zone 4',
-      date: '15 Oct. 08h00 - 14H00',
-      status: BookingStatus.available,
-    ),
-    BookingModel(
-      type: 'Court séjour',
-      roomType: 'Chambre standard',
-      price: '60 000 FCA',
-      hotelName: 'Résidence onyx',
-      location: 'Marcory, Zone 4',
-      date: 'Du 22 oct. 2026 au 26 oct. 2026 ( 4 jours )',
-      status: BookingStatus.unavailable,
-    ),
-    BookingModel(
-      type: '1/2 journée',
-      roomType: 'Chambre standard',
-      price: '10 000 FCA',
-      hotelName: 'Hôtel le refuge',
-      location: 'Marcory, Zone 4',
-      date: 'Le 31 jan. 2026 de 14h-20h (6h)',
-      status: BookingStatus.available,
-    ),
-  ];
+  late Future<List<ReservationModel>> _reservations;
+
+  @override
+  void initState() {
+    super.initState();
+    _reservations = ReservationService().fetchReservations(
+      SharedPreferencesHelper().getInt('identifiant')!,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -129,18 +112,37 @@ class _MyNewBookingsScreenState extends State<MyNewBookingsScreen> {
 
             /// LISTE DES RÉSERVATIONS
             Expanded(
-              child: Container(
-                color: appColorBorder,
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: bookings.length,
-                  itemBuilder: (context, index) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: BookingCard(booking: bookings[index]),
-                    );
-                  },
-                ),
+              child: FutureBuilder<List<ReservationModel>>(
+                future: _reservations,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  // ✅ Ajout de la gestion d'erreur
+                  if (snapshot.hasError) {
+                    print(snapshot.error);
+                    return Center(child: Text("Erreur : ${snapshot.error}"));
+                  }
+
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return const Center(child: Text("Aucune réservation enregistrée"));
+                  }
+
+                  final reservation = snapshot.data!;
+
+                  return ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: reservation.length,
+                    itemBuilder: (context, index) {
+                      final booking = reservation[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: BookingCard(booking: booking),
+                      );
+                    },
+                  );
+                },
               ),
             ),
           ],
@@ -171,7 +173,7 @@ class _MyNewBookingsScreenState extends State<MyNewBookingsScreen> {
               trailing: Switch(
                 value: true,
                 onChanged: (value) {},
-                activeColor: const Color(0xFF9C27B0),
+                activeThumbColor: const Color(0xFF9C27B0),
               ),
             ),
             ListTile(
@@ -200,9 +202,9 @@ class _MyNewBookingsScreenState extends State<MyNewBookingsScreen> {
   }
 }
 
-/// CARD DE RÉSERVATION
+/// CARD DE RÉSERVATION DYNAMIQUE
 class BookingCard extends StatelessWidget {
-  final BookingModel booking;
+  final ReservationModel booking;
 
   const BookingCard({super.key, required this.booking});
 
@@ -215,7 +217,7 @@ class BookingCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -234,16 +236,16 @@ class BookingCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      booking.type,
-                      style: const TextStyle(
-                        fontSize: 20,
+                      booking.room!.name ?? 'Chambre',
+                      style: TextStyle(
+                        fontSize: 18.sp,
                         fontWeight: FontWeight.bold,
                         color: Colors.black87,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      booking.roomType,
+                      "Capacité: ${booking.room?.capacity ?? '-'}",
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.grey.shade600,
@@ -253,7 +255,7 @@ class BookingCard extends StatelessWidget {
                 ),
               ),
               Text(
-                booking.price,
+                "${booking.totalPrice ?? '-'} ${booking.room!.hotel!.currency!}",
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -262,57 +264,49 @@ class BookingCard extends StatelessWidget {
               ),
             ],
           ),
-
           const SizedBox(height: 16),
           Divider(color: Colors.grey.shade200, height: 1),
           const SizedBox(height: 16),
 
-          /// DÉTAILS
-          _buildDetailRow(Icons.apartment_outlined, booking.hotelName),
+          _buildDetailRow(
+            Icons.apartment_outlined,
+            booking.room?.hotel!.hotelName! ?? 'Nom hôtel',
+          ),
           const SizedBox(height: 10),
-          _buildDetailRow(Icons.location_on_outlined, booking.location),
+          _buildDetailRow(
+            Icons.location_on_outlined,
+            booking.room!.hotel!.address!,
+          ), // tu peux ajouter l'hôtel avec location
           const SizedBox(height: 10),
-          _buildDetailRow(Icons.calendar_today_outlined, booking.date),
+          _buildDetailRow(
+            Icons.calendar_today_outlined,
+            "${booking.startDate} - ${booking.endDate}",
+          ),
 
           const SizedBox(height: 20),
 
-          /// BAS - STATUT ET BOUTON
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              /// BADGE STATUT
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: booking.status == BookingStatus.available
-                      ? Colors.green.shade50
-                      : Colors.red.shade50,
+                  color: _getStatusColor(booking.status).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      booking.status == BookingStatus.available
-                          ? Icons.check_circle
-                          : Icons.cancel,
-                      color: booking.status == BookingStatus.available
-                          ? Colors.green.shade700
-                          : Colors.red.shade700,
+                      _getStatusIcon(booking.status),
+                      color: _getStatusColor(booking.status),
                       size: 16,
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      booking.status == BookingStatus.available
-                          ? 'Disponible'
-                          : 'Indisponible',
+                      _getStatusLabel(booking.status),
                       style: TextStyle(
-                        color: booking.status == BookingStatus.available
-                            ? Colors.green.shade700
-                            : Colors.red.shade700,
+                        color: _getStatusColor(booking.status),
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                       ),
@@ -320,22 +314,17 @@ class BookingCard extends StatelessWidget {
                   ],
                 ),
               ),
-
-              /// BOUTON DÉTAILS
               TextButton(
                 onPressed: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => ReservationDetailScreen(),
+                      builder: (_) => ReservationDetailScreen(reserve: booking),
                     ),
                   );
                 },
                 style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 ),
                 child: Row(
                   children: [
@@ -347,7 +336,7 @@ class BookingCard extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    SizedBox(width: 4),
+                    const SizedBox(width: 4),
                     Icon(Icons.chevron_right, color: appColor, size: 20),
                   ],
                 ),
@@ -373,27 +362,37 @@ class BookingCard extends StatelessWidget {
       ],
     );
   }
-}
 
-/// MODÈLES
-enum BookingStatus { available, unavailable }
+  Color _getStatusColor(String? status) {
+    switch (status) {
+      case 'confirmed':  return Colors.green.shade700;
+      case 'pending':    return Colors.orange.shade700;
+      case 'canceled':   return Colors.red.shade700;
+      case 'completed':  return Colors.blue.shade700;
+      case 'no_show':    return Colors.red.shade500;
+      default:           return Colors.grey.shade700;
+    }
+  }
 
-class BookingModel {
-  final String type;
-  final String roomType;
-  final String price;
-  final String hotelName;
-  final String location;
-  final String date;
-  final BookingStatus status;
+  IconData _getStatusIcon(String? status) {
+    switch (status) {
+      case 'confirmed':  return Icons.check_circle;
+      case 'pending':    return Icons.hourglass_empty;
+      case 'canceled':   return Icons.cancel;
+      case 'completed':  return Icons.task_alt;
+      case 'no_show':    return Icons.person_off;
+      default:           return Icons.help_outline;
+    }
+  }
 
-  BookingModel({
-    required this.type,
-    required this.roomType,
-    required this.price,
-    required this.hotelName,
-    required this.location,
-    required this.date,
-    required this.status,
-  });
+  String _getStatusLabel(String? status) {
+    switch (status) {
+      case 'confirmed':  return 'Disponible';
+      case 'pending':    return 'En attente';
+      case 'canceled':   return 'Annulée';
+      case 'completed':  return 'Terminée';
+      case 'no_show':    return 'Indisponible';
+      default:           return 'Inconnu';
+    }
+  }
 }

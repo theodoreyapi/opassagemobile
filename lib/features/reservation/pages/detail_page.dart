@@ -1,16 +1,91 @@
-import 'package:flutter/material.dart';
-import 'package:opassage/features/reservation/pages/payment_page.dart';
+import 'dart:convert';
 
-class ReservationDetailScreen extends StatelessWidget {
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:opassage/core/constants/constants.dart';
+import 'package:opassage/core/widgets/widgets.dart';
+import 'package:opassage/features/reservation/pages/payment_page.dart';
+import 'package:opassage/models/reservation_model.dart';
+import 'package:sizer/sizer.dart';
+
+class ReservationDetailScreen extends StatefulWidget {
+  ReservationModel? reserve;
+
+  ReservationDetailScreen({super.key, this.reserve});
+
+  @override
+  State<ReservationDetailScreen> createState() =>
+      _ReservationDetailScreenState();
+}
+
+class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
+  final TextEditingController promoController = TextEditingController();
+
+  bool isCheckingPromo = false;
+  String? promoError;
+  double discountAmount = 0;
+  Map<String, dynamic>? promoData;
+
+  double get totalPrice => double.parse(widget.reserve!.totalPrice!);
+
+  double get finalPrice => totalPrice - discountAmount;
+
+  String get duration {
+    final start = DateTime.parse(widget.reserve!.startDate!);
+    final end = DateTime.parse(widget.reserve!.endDate!);
+
+    final diff = end.difference(start).inHours;
+    return "$diff Heures";
+  }
+
+  double get deposit => finalPrice * 0.5;
+
+  Future<void> checkPromoCode() async {
+    if (promoController.text.isEmpty) return;
+
+    setState(() {
+      isCheckingPromo = true;
+      promoError = null;
+      discountAmount = 0;
+    });
+
+    final url = Uri.parse('${ApiUrls.getPromoCheck}${promoController.text}');
+
+    try {
+      final response = await http.get(url);
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && data['success']) {
+        promoData = data['data'];
+
+        if (promoData!['discount_type'] == 'percentage') {
+          discountAmount = (totalPrice * promoData!['discount_value']) / 100;
+        } else {
+          discountAmount = promoData!['discount_value'].toDouble();
+        }
+
+        // Sécurité
+        if (discountAmount > totalPrice) {
+          discountAmount = totalPrice;
+        }
+      } else {
+        promoError = data['message'];
+      }
+    } catch (e) {
+      promoError = "Erreur de connexion";
+    }
+
+    setState(() {
+      isCheckingPromo = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {},
-        ),
         title: Text(
           "Nouvelle commande",
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
@@ -26,25 +101,31 @@ class ReservationDetailScreen extends StatelessWidget {
             // Image principale
             ClipRRect(
               borderRadius: BorderRadius.circular(15),
-              child: Image.asset(
-                'assets/images/room1.png', // Remplacez par votre image
-                height: 200,
-                width: double.infinity,
+              child: Image.network(
+                widget.reserve!.room!.firstImage ?? '',
                 fit: BoxFit.cover,
+                height: 50.w,
+                width: double.infinity,
+                errorBuilder: (_, __, ___) => Container(
+                  width: 100,
+                  height: 100,
+                  color: Colors.grey.shade300,
+                  child: const Icon(Icons.hotel, size: 40),
+                ),
               ),
             ),
             SizedBox(height: 20),
 
             // Titre et Localisation
             Text(
-              "Résidence O'Passage",
+              widget.reserve!.room!.name!,
               style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
             Row(
               children: [
                 Icon(Icons.location_on_outlined, size: 16, color: Colors.grey),
                 Text(
-                  " Résidence meublé • Cocody, riviera 3",
+                  widget.reserve!.room!.hotel!.address!,
                   style: TextStyle(color: Colors.grey),
                 ),
               ],
@@ -77,7 +158,7 @@ class ReservationDetailScreen extends StatelessWidget {
             Container(
               padding: EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.blue[50]?.withOpacity(0.3),
+                color: Colors.blue[50]?.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.blue[100]!),
               ),
@@ -87,10 +168,16 @@ class ReservationDetailScreen extends StatelessWidget {
                 crossAxisCount: 2,
                 childAspectRatio: 2.5,
                 children: [
-                  _buildDetailItem("DATE", "10 Octobre 2025"),
-                  _buildDetailItem("DURÉE", "3 Heures"),
-                  _buildDetailItem("HEURE", "14:00 - 19:00"),
-                  _buildDetailItem("TARIF HORAIRE", "20 000 FCFA/H"),
+                  _buildDetailItem("DATE", widget.reserve!.startDate!),
+                  _buildDetailItem("DURÉE", duration),
+                  _buildDetailItem(
+                    "HEURE",
+                    "${widget.reserve!.room!.hotel!.checkInTime} - ${widget.reserve!.room!.hotel!.checkOutTime}",
+                  ),
+                  _buildDetailItem(
+                    "TARIF HORAIRE",
+                    "${widget.reserve!.room!.pricePerNight} ${widget.reserve!.room!.hotel!.currency}/J",
+                  ),
                 ],
               ),
             ),
@@ -106,68 +193,76 @@ class ReservationDetailScreen extends StatelessWidget {
               children: [
                 Expanded(
                   child: TextField(
+                    controller: promoController,
                     decoration: InputDecoration(
                       hintText: "Entrez votre code",
+                      errorText: promoError,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12),
                     ),
                   ),
                 ),
                 SizedBox(width: 10),
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.blue[50],
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: IconButton(
-                    icon: Icon(Icons.add, color: Colors.blue),
-                    onPressed: () {},
-                  ),
+                IconButton(
+                  icon: isCheckingPromo
+                      ? CircularProgressIndicator()
+                      : Icon(Icons.check, color: Colors.blue),
+                  onPressed: checkPromoCode,
                 ),
               ],
             ),
             SizedBox(height: 30),
 
-            // Totaux
-            _buildPriceRow("Coût total", "60 000 FCFA", isBold: false),
             _buildPriceRow(
-              "Acompte à payer",
-              "30 000 FCFA",
+              "Coût initial",
+              "$totalPrice ${widget.reserve!.room!.hotel!.currency}",
+              isBold: false,
+            ),
+
+            if (discountAmount > 0)
+              _buildPriceRow(
+                "Réduction",
+                "- $discountAmount ${widget.reserve!.room!.hotel!.currency}",
+                isBold: false,
+                color: Colors.green,
+              ),
+
+            _buildPriceRow(
+              "Total à payer",
+              "$finalPrice ${widget.reserve!.room!.hotel!.currency}",
               isBold: true,
               color: Colors.purple,
             ),
+
+            _buildPriceRow(
+              "Acompte (50%)",
+              "$deposit ${widget.reserve!.room!.hotel!.currency}",
+              isBold: true,
+            ),
+
             SizedBox(height: 30),
 
-            // Boutons d'action
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => PaymentMethodScreen(),
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.amber,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: Text(
-                  "Payer 30 000 FCFA",
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
+            widget.reserve!.status! == 'confirmed'
+                ? SubmitButton(
+                    "Payer $deposit ${widget.reserve!.room!.hotel!.currency}",
+                    onPressed: finalPrice <= 0
+                        ? null
+                        : () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => PaymentMethodScreen(
+                                  amount: deposit,
+                                  promoCode: promoController.text,
+                                  residence: widget.reserve,
+                                ),
+                              ),
+                            );
+                          },
+                  )
+                : SizedBox.shrink(),
+
             SizedBox(height: 10),
             Row(
               children: [

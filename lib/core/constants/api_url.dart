@@ -6,90 +6,100 @@ class ApiUrls {
 
   // Base URL
   static const baseUrlProd = "http://candidat.aptiotalent.com/api";
-  static const baseUrlTest = "http://afrolia.sodalite-consulting.com/api";
+  static const baseUrlTest = "http://opassage.sodalite-consulting.com/api";
 
   // Pour obtenir la bonne base URL
   static String get baseUrl => change ? baseUrlProd : baseUrlTest;
 
+  // base des api
+  static String get auth => "$baseUrl/auth";
+  static String get users => "$baseUrl/users";
+  static String get hotels => "$baseUrl/hotels";
+  static String get reservations => "$baseUrl/reservations";
+  static String get promos => "$baseUrl/promos";
+  static String get favorites => "$baseUrl/favorites";
+  static String get subscriptions => "$baseUrl/subscriptions";
+  static String get notifications => "$baseUrl/notifications";
+  static String get politique => "$baseUrl/politique";
+  static String get reviews => "$baseUrl/reviews";
+
   // Authentification
-  static String get postLogin => "$baseUrl/login";
-  static String get postRegister => "$baseUrl/register";
-  static String get postOtp => "$baseUrl/otp";
-  static String get postReset => "$baseUrl/reset";
-  static String get postUpdate => "$baseUrl/update/";
-  static String get deleteDelete => "$baseUrl/delete/";
+  static String get postAuthLogin => "$auth/login";
+  static String get postAuthRegister => "$auth/register";
+  static String get postAuthRegisterOne => "$auth/register-one";
+  static String get postAuthLogout => "$auth/logout";
+  static String get postAuthUpdate => "$auth/update/";
+  static String get postAuthForgot => "$auth/password/forgot";
+  static String get postAuthReset => "$auth/password/reset";
+  static String get postAuthVerifOtp => "$auth/password/otp";
+  static String get postAuthResend => "$auth/resend/otp";
 
-  // Help & Support
-  static String get getHelp => "$baseUrl/help";
-  static String get getSecurity => "$baseUrl/security";
+  // User profile
+  static String get getUserProfile => "$users/profile/";
+  static String get putUserUpdateProfile => "$users/profile/";
+  static String get putUserChangePasswordProfile => "$users/password/";
+  static String get deleteUserAccountProfile => "$users/account/";
+  static String get putUserUpdateCodeProfile => "$users/code";
+  static String get postUserCodeCheckProfile => "$users/code/check";
 
-  // Salons Complets
-  static String get postUpdateInfoBasic => "$baseUrl/updateinfobasic/";
-  static String get postUpdatepresentation => "$baseUrl/updatepresentation/";
-  static String get getFirstPresentation => "$baseUrl/presentation/";
-  static String get getListSpecialite => "$baseUrl/specialites";
-  static String get getListLanguage => "$baseUrl/langues";
-  static String get getListAssoSpecialiste => "$baseUrl/associationspecialite/";
-  static String get getListAssoLanguage => "$baseUrl/associationlangue/";
-  static String get postAssociationSpecialiste => "$baseUrl/hair/specialites/associer";
-  static String get postAssociationLanguage => "$baseUrl/hair/langues/associer";
-  static String get getListDisponibility => "$baseUrl/disponibilites/";
-  static String get postSaveDisponibility => "$baseUrl/disponibilites";
-  static String get getListJoursHeures => "$baseUrl/jours-heures";
-  static String get getListServices => "$baseUrl/hair/services/";
-  static String get postSaveService => "$baseUrl/hair/services";
-  static String get putUpdateService => "$baseUrl/services/";
-  static String get deleteDeleteService => "$baseUrl/services/";
-  static String get getFirstSociaux => "$baseUrl/hair/sociaux/";
-  static String get postSaveSociaux => "$baseUrl/hair/sociaux";
-  static String get getListGallery => "$baseUrl/hair/gallery/";
-  static String get postSaveGallery => "$baseUrl/hair/gallery";
-  static String get putUpdateGallery => "$baseUrl/gallery/";
-  static String get deleteDeleteGallery => "$baseUrl/gallery/";
+  // Hotel & Rooms
+  static String get getHotelAll => hotels;
+  static String get getHotelDetail => "$hotels/";
+  static String get postHotelSearch => "$hotels/search";
+  static String get postHotelCreate => hotels;
+  static String get putHotelUpdate => "$hotels/";
+  static String get deleteHotel => "$hotels/";
+  static String get getHotelRoom => "$hotels/{hotel_id}/rooms";
+  static String get getRoomDetail => "$hotels/rooms/";
+  static String get getRoomAll => "$hotels/rooms";
+  static String get postRoomCreate => "$hotels/rooms";
+  static String get deleteRoom => "$hotels/rooms/";
+  static String get putRoomUpdate => "$hotels/rooms/";
+  static String get patchRoomAvailability => "$hotels/rooms/{id}/availability";
 
-  // Reservation
-  static String get postReservation => "$baseUrl/reservations/";
-  static String get getListReservation => "$baseUrl/reservations/user/";
-  static String get putUpdateReservation => "$baseUrl/reservations/";
-  static String get deleteDeleteReservation => "$baseUrl/reservations/";
-  static String get getListReservationHair => "$baseUrl/reservations/coiffeuse/";
-  static String get putConfirmReservationHair => "$baseUrl/reservations/reservations/";
-  static String get putDeclineReservationHair => "$baseUrl/reservations/refuser/";
-  static String get putFinishReservationHair => "$baseUrl/reservations/terminer/";
-  static String get getListTopServiceReservationHair => "$baseUrl/reservations/populaires/";
-  static String get getListStatisticReservationHair => "$baseUrl/reservations/statistiques/";
-  static String get getListTreeReservationHair => "$baseUrl/reservations/recentes/";
+  // Reservations and Payments
+  static String get postReservationCreate => reservations;
+  static String get getReservation => "$reservations/";
+  static String get postReservationSearch => "$reservations/search";
+  static String get deleteReservation => "$reservations/";
+  static String get getReservationRoomManager => "$reservations/";
+  static String get patchReservationConfirmManager => "$reservations/{id}/confirm";
+  static String get patchReservationCancelManager => "$reservations/{id}/cancel";
+  static String get postReservationPaymentInitial => "$reservations/payments/initiate";
+  static String get postReservationPaymentCallback => "$reservations/payments/callback";
+  static String get getReservationPayment => "$reservations/payments/";
 
-  // Paiement
-  static String get postPaiement => "$baseUrl/paiements";
-  static String get getListPaiement => "$baseUrl/paiements/user/";
-  static String get putUpdatePaiement => "$baseUrl/paiements/";
-  static String get deleteDeletePaiement => "$baseUrl/paiements/";
+  // Promo Codes
+  static String get getPromoCheck => "$promos/check/";
 
-  // Gains
-  static String get postGains => "$baseUrl/gains-coiffeuses";
-  static String get getListGains => "$baseUrl/gains-coiffeuses/user/";
-  static String get putUpdateGains => "$baseUrl/gains-coiffeuses/";
-  static String get deleteDeleteGains => "$baseUrl/gains-coiffeuses/";
-  static String get getEvolutionGains => "$baseUrl/gains-coiffeuses/evolution-annuelle/";
-  static String get getEvolutionServiceGains => "$baseUrl/gains-coiffeuses/revenus-par-service/";
+  // Favorites
+  static String get getFavorite => "$favorites/";
+  static String get postFavoriteCreate => favorites;
+  static String get deleteFavorite => favorites;
 
-  // Avis
-  static String get postAvis => "$baseUrl/avis";
-  static String get getListAvis => "$baseUrl/avis/coiffeuse/";
-  static String get putUpdateAvis => "$baseUrl/avis/";
-  static String get deleteDeleteAvis => "$baseUrl/avis/";
+  // Subscriptions
+  static String get getSubscriptionsAll => subscriptions;
+  static String get postSubscriptionsSubscribe => "$subscriptions/subscribe";
+  static String get getSubscriptionsByUser => "$subscriptions/me/";
+  static String get postSubscriptionsCancel => "$subscriptions/cancel";
+  static String get postSubscriptionsInitial => "$subscriptions/payments/initiate";
+  static String get postSubscriptionsCallback => "$subscriptions/payments/callback";
+  static String get getSubscriptionsPayment => "$subscriptions/payments/history/";
 
-  // Favorite
-  static String get postFavoris => "$baseUrl/favoris/ajouter";
-  static String get getListFavoris => "$baseUrl/favoris/client/";
-  static String get postVerifierFavoris => "$baseUrl/verifier/";
-  static String get deleteDeleteFavoris => "$baseUrl/favoris/supprimer";
+  // Notifications
+  static String get getNotificationUser => "$notifications/";
+  static String get postNotificationMark => "$notifications/mark-as-read";
+  static String get deleteNotification => "$notifications/mark-as-read";
 
-  // Dashboard
-  static String get postDashboard => "$baseUrl/dashboard/";
+  // Politiques
+  static String get getMention => "$politique/mention";
+  static String get getSecurity => "$politique/security";
+  static String get getCondition => "$politique/condition";
 
-  // Salons
-  static String get getListSalon => "$baseUrl/salons";
-  static String get getProfileSalon => "$baseUrl/salons/";
+  // Reviews
+  static String get getReviews => "$reviews/hotel/";
+  static String get postReviewsAdd => "$reviews/hotel/";
+  static String get deleteReviews => "$reviews/hotel/";
+
+
 }

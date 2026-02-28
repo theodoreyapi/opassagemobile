@@ -1,9 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:opassage/features/home/home.dart';
-import 'package:opassage/features/reservation/pages/reservation_confirm_page.dart'; // Pour le design du Switch iOS
+import 'package:opassage/core/themes/themes.dart';
+import 'package:opassage/core/widgets/widgets.dart';
+import 'package:opassage/features/reservation/pages/reservation_confirm_page.dart';
+import 'package:opassage/models/reservation_model.dart';
 
 class ReservationSummaryScreen extends StatefulWidget {
+  double? amount;
+  String? promoCode;
+  ReservationModel? residence;
+
+  ReservationSummaryScreen({
+    super.key,
+    this.amount,
+    this.promoCode,
+    this.residence,
+  });
+
   @override
   _ReservationSummaryScreenState createState() =>
       _ReservationSummaryScreenState();
@@ -16,14 +29,7 @@ class _ReservationSummaryScreenState extends State<ReservationSummaryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {},
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-      ),
+      appBar: AppBar(backgroundColor: Colors.white, elevation: 0),
       body: SingleChildScrollView(
         padding: EdgeInsets.symmetric(horizontal: 20),
         child: Column(
@@ -117,7 +123,7 @@ class _ReservationSummaryScreenState extends State<ReservationSummaryScreen> {
             _buildDetailRow("Heure de début", "08:00"),
             _buildDetailRow("Heure de fin", "14:00"),
             _buildDetailRow("Durée totale", "1/2 journée (06H)"),
-            _buildDetailRow("Prix Unitaire", "25 000 FCFA"),
+            _buildDetailRow("Prix Unitaire", "${widget.amount} ${widget.residence!.room!.hotel!.currency}"),
 
             // Ligne Coût Total avec fond bleu clair
             Container(
@@ -168,7 +174,7 @@ class _ReservationSummaryScreenState extends State<ReservationSummaryScreen> {
                 ),
                 CupertinoSwitch(
                   value: reserveForThirdParty,
-                  activeColor: Colors.purple[700],
+                  activeTrackColor: appColorChoise,
                   onChanged: (val) =>
                       setState(() => reserveForThirdParty = val),
                 ),
@@ -181,34 +187,16 @@ class _ReservationSummaryScreenState extends State<ReservationSummaryScreen> {
 
             SizedBox(height: 30),
 
-            // Bouton Valider
-            SizedBox(
-              width: double.infinity,
-              height: 55,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ReservationConfirmeScreen(),
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFFFFD700),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+            SubmitButton(
+              "Valider",
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ReservationConfirmeScreen(),
                   ),
-                ),
-                child: Text(
-                  "Valider",
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-              ),
+                );
+              },
             ),
             SizedBox(height: 20),
           ],
@@ -222,13 +210,13 @@ class _ReservationSummaryScreenState extends State<ReservationSummaryScreen> {
       children: [
         CircleAvatar(
           radius: 12,
-          backgroundColor: Colors.purple[700],
+          backgroundColor: appColorChoise,
           child: Text("1", style: TextStyle(color: Colors.white, fontSize: 12)),
         ),
-        Container(width: 30, height: 2, color: Colors.purple[700]),
+        Container(width: 30, height: 2, color: appColorChoise),
         CircleAvatar(
           radius: 12,
-          backgroundColor: Colors.purple[700],
+          backgroundColor: appColorChoise,
           child: Text("2", style: TextStyle(color: Colors.white, fontSize: 12)),
         ),
       ],
@@ -294,7 +282,7 @@ class _ReservationSummaryScreenState extends State<ReservationSummaryScreen> {
         filled: true,
         fillColor: Colors.white,
         suffixIcon: icon != null
-            ? Icon(icon, color: Colors.purple[700], size: 20)
+            ? Icon(icon, color: appColorChoise, size: 20)
             : null,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),

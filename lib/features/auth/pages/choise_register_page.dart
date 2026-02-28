@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:gap/gap.dart';
 import 'package:opassage/features/auth/auth.dart';
 import 'package:sizer/sizer.dart';
@@ -7,7 +6,8 @@ import 'package:sizer/sizer.dart';
 import '../../../core/themes/themes.dart';
 
 class ChoiseRegisterPage extends StatefulWidget {
-  const ChoiseRegisterPage({super.key});
+  String? login;
+  ChoiseRegisterPage({super.key, this.login});
 
   @override
   State<ChoiseRegisterPage> createState() => _ChoiseRegisterPageState();
@@ -66,7 +66,7 @@ class _ChoiseRegisterPageState extends State<ChoiseRegisterPage> {
                   onTap: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (_) => RegisterPage(texte: "Client"),
+                        builder: (_) => RegisterPage(texte: "client", login: widget.login),
                       ),
                     );
                   },
@@ -102,7 +102,7 @@ class _ChoiseRegisterPageState extends State<ChoiseRegisterPage> {
                   onTap: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (_) => RegisterPage(texte: "Propriétaire"),
+                        builder: (_) => RegisterPage(texte: "opasseur", login: widget.login),
                       ),
                     );
                   },

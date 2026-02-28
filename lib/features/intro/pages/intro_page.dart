@@ -1,15 +1,21 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:gap/gap.dart';
 import 'package:intl_phone_number_input/intl_phone_number_input.dart';
+import 'package:opassage/core/themes/themes.dart';
+import 'package:opassage/core/utils/utils.dart';
 import 'package:opassage/core/widgets/widgets.dart';
 import 'package:opassage/features/auth/auth.dart';
+import 'package:opassage/features/menu/menu.dart';
 import 'package:pinput/pinput.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../../core/constants/constants.dart';
-import '../../../core/themes/themes.dart';
+import '../../../services/auth_service.dart';
 
 class IntroPage extends StatefulWidget {
   const IntroPage({super.key});
@@ -22,6 +28,8 @@ class _IntroPageState extends State<IntroPage> {
   late PageController _pageController;
   int _pageIndex = 0;
   late int _nbreSlides;
+
+  String? registerLogin; // email ou téléphone
 
   @override
   void initState() {
@@ -70,10 +78,19 @@ class _IntroPageState extends State<IntroPage> {
               } else {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => ChoiseRegisterPage()),
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        ChoiseRegisterPage(login: registerLogin),
+                  ),
                 );
               }
             },
+            onRegisterSuccess: (login) {
+              setState(() {
+                registerLogin = login;
+              });
+            },
+            registerLogin: registerLogin,
           );
         },
       ),
@@ -118,6 +135,8 @@ class OnboardSlide extends StatefulWidget {
   final int pageIndex;
   final int total;
   final VoidCallback onNext;
+  final Function(String login)? onRegisterSuccess;
+  final String? registerLogin;
 
   OnboardSlide({
     super.key,
@@ -125,6 +144,8 @@ class OnboardSlide extends StatefulWidget {
     required this.pageIndex,
     required this.total,
     required this.onNext,
+    this.onRegisterSuccess,
+    this.registerLogin,
   });
 
   @override
@@ -132,12 +153,14 @@ class OnboardSlide extends StatefulWidget {
 }
 
 class _OnboardSlideState extends State<OnboardSlide> {
-  final _formKey = GlobalKey<FormState>();
-
   final FocusNode _focusNode = FocusNode();
   bool _isFocused = false;
 
   String? otp;
+
+  bool isLoading = false;
+  int secondsLeft = 60;
+  Timer? timer;
 
   late final TextEditingController pinController;
 
@@ -153,10 +176,6 @@ class _OnboardSlideState extends State<OnboardSlide> {
   }
 
   var login = TextEditingController();
-  var password = TextEditingController();
-  var confirmPassword = TextEditingController();
-  var name = TextEditingController();
-  var lastName = TextEditingController();
   var email = TextEditingController();
 
   void dispose() {
@@ -183,24 +202,34 @@ class _OnboardSlideState extends State<OnboardSlide> {
 
   Widget _buildEmailPhoneForm() {
     return Column(
-      mainAxisAlignment: .center,
+      mainAxisAlignment: .start,
+      crossAxisAlignment: .start,
       children: [
-        InputText(
-          hintText: "votre@email.com",
-          keyboardType: TextInputType.emailAddress,
-          controller: email,
-          prefixIcon: Icon(Icons.email_outlined),
+        Text(
+          "\n\nBienvenue,\nPour t'inscrire, renseigne ton",
+          style: TextStyle(
+            color: appColor,
+            fontSize: 18.sp,
+            fontWeight: FontWeight.w700,
+          ),
         ),
         Gap(1.h),
-        Text("OU"),
+        Text(
+          "Numéro de téléphone",
+          style: TextStyle(
+            color: appColor,
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
         Gap(1.h),
         Container(
           padding: EdgeInsets.only(left: 4.w),
           decoration: BoxDecoration(
-            color: appColorInputFond,
+            color: appColor.withValues(alpha: .05),
             borderRadius: BorderRadius.circular(3.w),
             border: Border.all(
-              color: _isFocused ? appColor : appColorBorder,
+              color: _isFocused ? appColor : appColor,
               width: 2,
             ),
           ),
@@ -210,13 +239,13 @@ class _OnboardSlideState extends State<OnboardSlide> {
               phoneIndicator = number.phoneNumber!;
             },
             onInputValidated: (bool value) {},
-            hintText: "Téléphone",
+            hintText: "07 07 07 07 07",
             selectorConfig: const SelectorConfig(
               selectorType: PhoneInputSelectorType.BOTTOM_SHEET,
             ),
             ignoreBlank: false,
             autoValidateMode: AutovalidateMode.disabled,
-            selectorTextStyle: const TextStyle(color: Colors.black),
+            selectorTextStyle: TextStyle(color: appColor),
             countries: ['CI'],
             initialValue: number,
             textFieldController: login,
@@ -225,9 +254,35 @@ class _OnboardSlideState extends State<OnboardSlide> {
               signed: true,
               decimal: true,
             ),
-            inputBorder: const OutlineInputBorder(borderSide: BorderSide.none),
+            inputBorder: OutlineInputBorder(borderSide: BorderSide.none),
             onSaved: (PhoneNumber number) {},
           ),
+        ),
+        Gap(1.h),
+        Center(
+          child: Text(
+            "OU",
+            style: TextStyle(
+              color: appColor,
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+        Gap(1.h),
+        Text(
+          "Adresse email",
+          style: TextStyle(
+            color: appColor,
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        Gap(1.h),
+        InputText(
+          hintText: "jeanclaude@gmail.com",
+          keyboardType: TextInputType.emailAddress,
+          controller: email,
         ),
       ],
     );
@@ -240,11 +295,11 @@ class _OnboardSlideState extends State<OnboardSlide> {
       textStyle: TextStyle(fontSize: 25.sp, color: appColor),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(3.w),
-        border: Border.all(color: appColorBorder, width: 2),
+        border: Border.all(color: appColor, width: 2),
       ),
     );
     final focusedPinTheme = defaultPinTheme.copyDecorationWith(
-      border: Border.all(color: appColorBorder, width: 2),
+      border: Border.all(color: appColor, width: 2),
       borderRadius: BorderRadius.circular(3.w),
     );
 
@@ -253,16 +308,24 @@ class _OnboardSlideState extends State<OnboardSlide> {
     );
 
     return Column(
-      mainAxisAlignment: .start,
-      crossAxisAlignment: .start,
+      mainAxisAlignment: .center,
+      crossAxisAlignment: .center,
       children: [
         Text(
-          "Veuillez saisir le code de vérification à 4 "
-          "chiffres reçu sur l’email fournis.",
+          "\n\nCommençons ton inscription",
           style: TextStyle(
-            color: appColorBlack,
-            fontWeight: FontWeight.bold,
-            fontSize: 13.sp,
+            color: appColor,
+            fontSize: 18.sp,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        Gap(1.h),
+        Text(
+          "Saisi le code reçu par sms ou email",
+          style: TextStyle(
+            color: appColor,
+            fontSize: 15.sp,
+            fontWeight: FontWeight.w500,
           ),
         ),
         Gap(1.h),
@@ -291,7 +354,15 @@ class _OnboardSlideState extends State<OnboardSlide> {
                 height: 14.w,
                 "Recevoir OTP",
                 fontSize: 12.sp,
-                onPressed: () {},
+                onPressed: () async {
+                  final body = jsonEncode({
+                    "login": email.text.isNotEmpty
+                        ? email.text
+                        : phoneIndicator,
+                  });
+                  await AuthApi.resendOtp(body);
+                  _startTimer();
+                },
                 couleur: appColor,
                 textcouleur: appColorWhite,
               ),
@@ -300,10 +371,12 @@ class _OnboardSlideState extends State<OnboardSlide> {
         ),
         Gap(1.h),
         Text(
-          "Vous pouvez demander un nouveau code une fois "
-          "le compte à rebours terminé. \n\n114 secondes restantes",
+          secondsLeft > 0
+              ? "Renvoyez le code dans : $secondsLeft "
+                    "secondes"
+              : "Vous pouvez renvoyer le code",
           style: TextStyle(
-            color: appColorBlack,
+            color: appColor,
             fontWeight: FontWeight.normal,
             fontSize: 13.sp,
           ),
@@ -315,49 +388,17 @@ class _OnboardSlideState extends State<OnboardSlide> {
   Widget _buildFinalInfoForm() {
     return Column(
       mainAxisAlignment: .center,
+      crossAxisAlignment: .center,
       children: [
-        InputText(
-          hintText: "votre@email.com",
-          keyboardType: TextInputType.emailAddress,
-          controller: email,
-          prefixIcon: Icon(Icons.email_outlined),
-        ),
-        Gap(1.h),
-        Text("OU"),
-        Gap(1.h),
-        Container(
-          padding: EdgeInsets.only(left: 4.w),
-          decoration: BoxDecoration(
-            color: appColorInputFond,
-            borderRadius: BorderRadius.circular(3.w),
-            border: Border.all(
-              color: _isFocused ? appColor : appColorBorder,
-              width: 2,
-            ),
-          ),
-          child: InternationalPhoneNumberInput(
-            focusNode: _focusNode,
-            onInputChanged: (PhoneNumber number) {
-              phoneIndicator = number.phoneNumber!;
-            },
-            onInputValidated: (bool value) {},
-            hintText: "Téléphone",
-            selectorConfig: const SelectorConfig(
-              selectorType: PhoneInputSelectorType.BOTTOM_SHEET,
-            ),
-            ignoreBlank: false,
-            autoValidateMode: AutovalidateMode.disabled,
-            selectorTextStyle: const TextStyle(color: Colors.black),
-            countries: ['CI'],
-            initialValue: number,
-            textFieldController: login,
-            formatInput: true,
-            keyboardType: const TextInputType.numberWithOptions(
-              signed: true,
-              decimal: true,
-            ),
-            inputBorder: const OutlineInputBorder(borderSide: BorderSide.none),
-            onSaved: (PhoneNumber number) {},
+        Icon(Icons.check_circle, color: Colors.green, size: 50.sp),
+        Text(
+          textAlign: TextAlign.center,
+          "Votre compte a été vérifié. Veuillez cliquer sur suivant "
+          "pour terminer votre inscription",
+          style: TextStyle(
+            color: appColor,
+            fontWeight: FontWeight.bold,
+            fontSize: 16.sp,
           ),
         ),
       ],
@@ -408,9 +449,9 @@ class _OnboardSlideState extends State<OnboardSlide> {
                       data: widget.data.title,
                       style: {
                         "body": Style(
-                          color: Colors.white,
+                          color: appColorSecond,
                           fontSize: FontSize(18.sp),
-                          textAlign: TextAlign.center,
+                          textAlign: TextAlign.start,
                         ),
                       },
                     ),
@@ -418,86 +459,97 @@ class _OnboardSlideState extends State<OnboardSlide> {
                     Gap(2.h),
 
                     /// CARD BLANCHE EN BAS
-                    Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.all(6.w),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.vertical(
-                          top: Radius.circular(32),
-                        ),
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            "Connectez-vous ou inscrivez-vous pour continuer",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 15.sp,
-                              color: appColorBlack,
-                              fontWeight: FontWeight.bold,
+                    ClipPath(
+                      clipper: NewClipper(),
+                      child: Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.all(6.w),
+                        color: appColorFondLogin,
+
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            /// FORMULAIRE DYNAMIQUE SELON LE TYPE
+                            _buildForm(widget.data.formType),
+
+                            Gap(2.h),
+
+                            SubmitButton(
+                              AppConstants.btnNext,
+                              onPressed: () async {
+                                if (widget.data.formType ==
+                                    FormType.emailPhone) {
+                                  await _handleRegister();
+                                } else if (widget.data.formType ==
+                                    FormType.nameAddress) {
+                                  await _verifyOtp();
+                                } else {
+                                  widget.onNext();
+                                }
+                              },
                             ),
-                          ),
 
-                          Gap(2.h),
+                            Gap(2.h),
 
-                          /// FORMULAIRE DYNAMIQUE SELON LE TYPE
-                          _buildForm(widget.data.formType),
-
-                          Gap(2.h),
-
-                          SubmitButton(
-                            AppConstants.btnNext,
-                            onPressed: widget.onNext,
-                          ),
-
-                          Gap(2.h),
-
-                          /// SOCIALS
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              CircleAvatar(
-                                radius: 22,
-                                backgroundColor: Colors.blue,
-                                child: IconButton(
-                                  icon: Icon(Icons.facebook),
-                                  color: Colors.white,
-                                  onPressed: () {},
-                                ),
+                            /// SOCIALS
+                            if (widget.data.formType ==
+                                FormType.emailPhone) ...[
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      color: appColorWhite,
+                                      borderRadius: BorderRadius.circular(3.w),
+                                    ),
+                                    child: IconButton(
+                                      icon: Icon(
+                                        Icons.facebook_outlined,
+                                        size: 25.sp,
+                                      ),
+                                      color: Colors.blue[900],
+                                      onPressed: () {},
+                                    ),
+                                  ),
+                                  Gap(3.w),
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      color: appColorWhite,
+                                      borderRadius: BorderRadius.circular(3.w),
+                                    ),
+                                    child: IconButton(
+                                      icon: Icon(
+                                        Icons.g_mobiledata_outlined,
+                                        size: 25.sp,
+                                      ),
+                                      color: Colors.red,
+                                      onPressed: () {},
+                                    ),
+                                  ),
+                                ],
                               ),
-                              Gap(3.w),
-                              CircleAvatar(
-                                radius: 22,
-                                backgroundColor: Colors.red,
-                                child: IconButton(
-                                  icon: Icon(Icons.g_mobiledata),
-                                  color: Colors.white,
-                                  onPressed: () {},
-                                ),
-                              ),
+                              Gap(2.h),
                             ],
-                          ),
 
-                          Gap(2.h),
-
-                          /// INDICATEURS
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: List.generate(
-                              widget.total,
-                              (index) => Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 4,
-                                ),
-                                child: DotIndicator(
-                                  isActive: index == widget.pageIndex,
+                            TextButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => LoginPage(),
+                                  ),
+                                );
+                              },
+                              child: Text(
+                                "Se connecter",
+                                style: TextStyle(
+                                  color: appColor,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -506,8 +558,105 @@ class _OnboardSlideState extends State<OnboardSlide> {
             ),
           ],
         ),
+
+        Positioned(
+          right: 0,
+          top: 20,
+          child: TextButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => MenuPage()),
+              );
+            },
+            child: Text(
+              "Passer",
+              style: TextStyle(
+                color: appColorWhite,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
       ],
     );
+  }
+
+  Future<void> _verifyOtp() async {
+    if (otp == null || otp!.length != 4) {
+      SnackbarHelper.showError(context, "OTP invalide");
+      return;
+    }
+
+    setState(() => isLoading = true);
+
+    final body = jsonEncode({"login": widget.registerLogin, "otp": otp});
+
+    final response = await AuthApi.verifyOtp(body);
+
+    final responseData = jsonDecode(utf8.decode(response.bodyBytes));
+
+    print(responseData);
+
+    setState(() => isLoading = false);
+
+    if (response.statusCode == 200) {
+      widget.onNext(); // 👉 formulaire final
+    } else {
+      SnackbarHelper.showError(context, _parseMessage(responseData['message']));
+    }
+  }
+
+  String _parseMessage(dynamic message) {
+    if (message is List) {
+      return message.join('\n');
+    }
+    return message.toString();
+  }
+
+  Future<void> _handleRegister() async {
+    if (email.text.isEmpty && login.text.isEmpty) {
+      SnackbarHelper.showError(
+        context,
+        "Veuillez saisir un email ou un téléphone",
+      );
+      return;
+    }
+
+    final loginValue = email.text.isNotEmpty ? email.text : phoneIndicator;
+
+    setState(() => isLoading = true);
+
+    final body = jsonEncode({
+      "login": email.text.isNotEmpty ? email.text : phoneIndicator,
+    });
+
+    final response = await AuthApi.registerOne(body);
+
+    final responseData = jsonDecode(utf8.decode(response.bodyBytes));
+
+    setState(() => isLoading = false);
+
+    if (response.statusCode == 200) {
+      _startTimer();
+      widget.onRegisterSuccess?.call(loginValue);
+      widget.onNext(); // 👉 formulaire OTP
+    } else {
+      SnackbarHelper.showError(context, _parseMessage(responseData['message']));
+    }
+  }
+
+  void _startTimer() {
+    secondsLeft = 60;
+    timer?.cancel();
+
+    timer = Timer.periodic(Duration(seconds: 1), (t) {
+      if (secondsLeft == 0) {
+        t.cancel();
+      } else {
+        setState(() => secondsLeft--);
+      }
+    });
   }
 }
 
@@ -528,4 +677,39 @@ class DotIndicator extends StatelessWidget {
       ),
     );
   }
+}
+
+class NewClipper extends CustomClipper<Path> {
+  final double leftOffset;
+
+  // On définit à quelle distance du haut la courbe commence sur la gauche
+  NewClipper({this.leftOffset = 80.0});
+
+  @override
+  Path getClip(Size size) {
+    Path path = Path();
+
+    // 1. Point de départ : On commence plus bas sur le bord gauche
+    path.moveTo(0, leftOffset);
+
+    // 2. La courbe : Elle monte doucement vers le coin supérieur droit
+    path.cubicTo(
+      size.width * 0.20,
+      -25.0, // contrôle gauche
+      size.width * 0.90,
+      -8.0, // contrôle droite (adouci ici)
+      size.width, // Point d'arrivée X (Bord droit)
+      50.0, // Point d'arrivée Y (Tout en haut à droite)
+    );
+
+    // 3. On trace les lignes pour fermer la forme (droite, bas, gauche)
+    path.lineTo(size.width, size.height);
+    path.lineTo(0, size.height);
+    path.close();
+
+    return path;
+  }
+
+  @override
+  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => true;
 }
