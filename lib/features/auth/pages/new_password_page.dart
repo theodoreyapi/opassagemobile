@@ -5,7 +5,7 @@ import 'package:sizer/sizer.dart';
 import '../../../../core/constants/constants.dart';
 import '../../../../core/themes/themes.dart';
 import '../../../../core/widgets/widgets.dart';
-import '../../menu/menu.dart';
+import '../../opasseur/menu/menu.dart';
 
 class NewPasswordPage extends StatefulWidget {
   const NewPasswordPage({super.key});

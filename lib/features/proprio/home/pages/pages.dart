@@ -1,0 +1,1 @@
+export 'home_proprio_page.dart';

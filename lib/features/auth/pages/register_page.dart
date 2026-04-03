@@ -21,237 +21,428 @@ class RegisterPage extends StatefulWidget {
   State<RegisterPage> createState() => _RegisterPageState();
 }
 
-typedef MenuEntry = DropdownMenuEntry<String>;
-
 class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
   bool _obscure = true;
-  late bool _isChecked = true;
-
-  final FocusNode _focusNode = FocusNode();
-  bool _isFocused = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _focusNode.addListener(() {
-      setState(() {
-        _isFocused = _focusNode.hasFocus;
-      });
-    });
-  }
+  bool _isChecked = true;
 
   var password = TextEditingController();
   var confirmPassword = TextEditingController();
   var name = TextEditingController();
 
   @override
-  void dispose() {
-    _focusNode.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: appColorFond,
-      body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 5.w),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: .start,
-              mainAxisAlignment: .start,
-              children: [
-                Row(
-                  children: [
-                    FloatingActionButton.small(
-                      backgroundColor: appColorWhite,
-                      elevation: 0,
-                      shape: CircleBorder(),
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: Icon(Icons.arrow_back, color: appColorBlack),
-                    ),
-                    Image.asset("assets/images/logo_color.png"),
+      resizeToAvoidBottomInset: true,
+      body: Stack(
+        children: [
+          /// IMAGE BACKGROUND
+          Positioned.fill(
+            child: Image.asset("assets/images/2.png", fit: BoxFit.cover),
+          ),
+
+          /// GRADIENT OVERLAY
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.15),
+                    Colors.black.withValues(alpha: 0.55),
                   ],
                 ),
-                Gap(4.h),
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisAlignment: .start,
-                      crossAxisAlignment: .start,
-                      children: [
-                        Text(
-                          "Plonge dans l’univers des belles expériences dans "
-                          "ton hébergement",
-                          style: TextStyle(
-                            color: appColor,
-                            fontSize: 20.sp,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Gap(1.h),
-                        Text(
-                          "Renseignez vos informations pour finaliser "
-                          "votre inscription",
-                          style: TextStyle(
-                            color: appColor,
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.normal,
-                          ),
-                        ),
-                        Gap(4.h),
-                        InputText(
-                          hintText: "Pseudo ou prenoms",
-                          keyboardType: TextInputType.text,
-                          controller: name,
-                          validatorMessage:
-                              "Veuillez saisir votre pseudo ou prenoms",
-                        ),
-                        Gap(1.h),
-                        InputPassword(
-                          hintText: "Mot de passe",
-                          controller: password,
-                          validatorMessage:
-                              "Veuillez saisir votre mot de passe",
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscure
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
-                              color: appColor,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _obscure = !_obscure;
-                              });
-                            },
-                          ),
-                        ),
-                        Gap(1.h),
-                        InputPassword(
-                          hintText: "Confimer le mot de passe",
-                          controller: confirmPassword,
-                          validatorMessage:
-                              "Veuillez saisir votre mot de passe",
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscure
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
-                              color: appColor,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _obscure = !_obscure;
-                              });
-                            },
-                          ),
-                        ),
-                        Gap(2.h),
-                        SubmitButton(
-                          AppConstants.btnCreate,
-                          onPressed: () {
-                            if (_formKey.currentState!.validate()) {
-                              if (password.text == confirmPassword.text) {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => CreatePinPage(username: name.text,
-                                      login: widget.login,
-                                      role: widget.texte,
-                                      password: password.text,),
-                                  ),
-                                );
-                              } else {
-                                SnackbarHelper.showError(
-                                  context,
-                                  "Les mots de passe ne correspondent pas",
-                                );
-                              }
-                            } else {
-                              SnackbarHelper.showError(
-                                context,
-                                "Tous les champs sont obligatoires",
-                              );
-                            }
-                          },
-                        ),
-                        Gap(2.h),
-                        Center(
-                          child: Row(
-                            mainAxisAlignment: .center,
+              ),
+            ),
+          ),
+
+          /// CONTENU
+          SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                    ),
+                    child: IntrinsicHeight(
+                      child: Column(
+                        mainAxisAlignment: .end,
+                        children: [
+                          Stack(
                             children: [
-                              Checkbox(
-                                value: _isChecked,
-                                onChanged: (value) {
-                                  setState(() {
-                                    _isChecked = value!;
-                                  });
-                                },
+                              Container(
+                                height: 200,
+                                color: appColorBlack.withValues(alpha: .4),
                               ),
-                              Expanded(
-                                child: RichText(
-                                  text: TextSpan(
-                                    style: TextStyle(
-                                      fontSize: 15.sp,
-                                      color: appColorBlack,
+
+                              Column(
+                                children: [
+                                  /// TITRE
+                                  Padding(
+                                    padding: EdgeInsets.all(2.w),
+                                    child: Text(
+                                      "Plonge dans l’univers des belles "
+                                      "expériences dans ton hébergement "
+                                      "avec O'Passage, ton appli",
+                                      style: TextStyle(
+                                        color: appColorSecond,
+                                        fontSize: 18.sp,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
-                                    children: [
-                                      TextSpan(
-                                        text: "J'accepte les conditions GU",
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.normal,
-                                          color: appColor,
-                                        ),
-                                        recognizer: TapGestureRecognizer()
-                                          ..onTap = () {
-                                            showBarModalBottomSheet(
-                                              isDismissible: false,
-                                              enableDrag: false,
-                                              expand: true,
-                                              topControl: Align(
-                                                alignment: Alignment.centerLeft,
-                                                child:
-                                                    FloatingActionButton.small(
-                                                      heroTag: "Condition",
-                                                      backgroundColor:
-                                                          appColorWhite,
-                                                      shape:
-                                                          const CircleBorder(),
-                                                      onPressed: () =>
-                                                          Navigator.of(
-                                                            context,
-                                                          ).pop(),
-                                                      child: Icon(
-                                                        Icons.close,
+                                  ),
+
+                                  Gap(4.h),
+
+                                  /// FORMULAIRE AVEC COURBE
+                                  ClipPath(
+                                    clipper: NewClipperR(),
+                                    child: Container(
+                                      width: double.infinity,
+                                      padding: EdgeInsets.all(6.w),
+                                      color: appColorFondLogin,
+
+                                      child: Form(
+                                        key: _formKey,
+                                        child: Column(
+                                          mainAxisSize: .min,
+                                          mainAxisAlignment: .start,
+                                          crossAxisAlignment: .start,
+                                          children: [
+                                            Text(
+                                              "\nCréer ton compte",
+                                              style: TextStyle(
+                                                color: appColor,
+                                                fontSize: 18.sp,
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
+                                            Gap(1.h),
+                                            Text(
+                                              "Pseudo ou prénoms",
+                                              style: TextStyle(
+                                                color: appColor,
+                                                fontSize: 14.sp,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                            Gap(1.h),
+
+                                            InputText(
+                                              hintText: "jeanmichel",
+                                              controller: name,
+                                              validatorMessage:
+                                                  "Veuillez saisir votre pseudo ou prénoms",
+                                            ),
+
+                                            Gap(1.h),
+                                            Text(
+                                              "Créer un mot de passe",
+                                              style: TextStyle(
+                                                color: appColor,
+                                                fontSize: 14.sp,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                            Gap(1.h),
+
+                                            InputPassword(
+                                              hintText: "**********",
+                                              controller: password,
+                                              validatorMessage:
+                                                  "Veuillez saisir votre mot de passe",
+                                              suffixIcon: IconButton(
+                                                icon: Icon(
+                                                  _obscure
+                                                      ? Icons.visibility_off
+                                                      : Icons.visibility,
+                                                  color: appColor,
+                                                ),
+                                                onPressed: () {
+                                                  setState(() {
+                                                    _obscure = !_obscure;
+                                                  });
+                                                },
+                                              ),
+                                            ),
+
+                                            Gap(1.h),
+                                            Text(
+                                              "Confirme le mot de passe",
+                                              style: TextStyle(
+                                                color: appColor,
+                                                fontSize: 14.sp,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                            Gap(1.h),
+
+                                            InputPassword(
+                                              hintText: "**********",
+                                              controller: confirmPassword,
+                                              validatorMessage:
+                                                  "Veuillez confirmer votre mot de passe",
+                                              suffixIcon: IconButton(
+                                                icon: Icon(
+                                                  _obscure
+                                                      ? Icons.visibility_off
+                                                      : Icons.visibility,
+                                                  color: appColor,
+                                                ),
+                                                onPressed: () {
+                                                  setState(() {
+                                                    _obscure = !_obscure;
+                                                  });
+                                                },
+                                              ),
+                                            ),
+
+                                            Gap(3.h),
+
+                                            SubmitButton(
+                                              AppConstants.btnCreate,
+                                              onPressed: () {
+                                                if (_formKey.currentState!
+                                                    .validate()) {
+                                                  if (password.text ==
+                                                      confirmPassword.text) {
+                                                    Navigator.push(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                        builder: (context) =>
+                                                            CreatePinPage(
+                                                              username:
+                                                                  name.text,
+                                                              login:
+                                                                  widget.login,
+                                                              role:
+                                                                  widget.texte,
+                                                              password:
+                                                                  password.text,
+                                                            ),
+                                                      ),
+                                                    );
+                                                  } else {
+                                                    SnackbarHelper.showError(
+                                                      context,
+                                                      "Les mots de passe ne correspondent pas",
+                                                    );
+                                                  }
+                                                }
+                                              },
+                                            ),
+
+                                            Gap(1.h),
+
+                                            /// CONDITIONS
+                                            Row(
+                                              children: [
+                                                Checkbox(
+                                                  value: _isChecked,
+                                                  onChanged: (value) {
+                                                    setState(() {
+                                                      _isChecked = value!;
+                                                    });
+                                                  },
+                                                ),
+                                                Expanded(
+                                                  child: RichText(
+                                                    text: TextSpan(
+                                                      style: TextStyle(
+                                                        fontSize: 14.sp,
                                                         color: appColorBlack,
                                                       ),
+                                                      children: [
+                                                        const TextSpan(
+                                                          text:
+                                                              "J'accepte les ",
+                                                        ),
+                                                        TextSpan(
+                                                          text:
+                                                              "Conditions générales d’utilisation",
+                                                          style: TextStyle(
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            color: Colors.red,
+                                                          ),
+                                                          recognizer: TapGestureRecognizer()
+                                                            ..onTap = () {
+                                                              showBarModalBottomSheet(
+                                                                isDismissible:
+                                                                    false,
+                                                                enableDrag:
+                                                                    false,
+                                                                expand: true,
+                                                                topControl: Align(
+                                                                  alignment:
+                                                                      Alignment
+                                                                          .centerLeft,
+                                                                  child: FloatingActionButton.small(
+                                                                    heroTag:
+                                                                        "Condition",
+                                                                    backgroundColor:
+                                                                        appColorWhite,
+                                                                    shape:
+                                                                        const CircleBorder(),
+                                                                    onPressed: () =>
+                                                                        Navigator.of(
+                                                                          context,
+                                                                        ).pop(),
+                                                                    child: Icon(
+                                                                      Icons
+                                                                          .close,
+                                                                      color:
+                                                                          appColorBlack,
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                                context:
+                                                                    context,
+                                                                builder:
+                                                                    (context) =>
+                                                                        Container(),
+                                                              );
+                                                            },
+                                                        ),
+                                                        const TextSpan(
+                                                          text: " et la ",
+                                                        ),
+                                                        TextSpan(
+                                                          text:
+                                                              "Politique de Confidentialité.",
+                                                          style: TextStyle(
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            color: Colors.red,
+                                                          ),
+                                                          recognizer: TapGestureRecognizer()
+                                                            ..onTap = () {
+                                                              showBarModalBottomSheet(
+                                                                isDismissible:
+                                                                    false,
+                                                                enableDrag:
+                                                                    false,
+                                                                expand: true,
+                                                                topControl: Align(
+                                                                  alignment:
+                                                                      Alignment
+                                                                          .centerLeft,
+                                                                  child: FloatingActionButton.small(
+                                                                    heroTag:
+                                                                        "Politique",
+                                                                    backgroundColor:
+                                                                        appColorWhite,
+                                                                    shape:
+                                                                        const CircleBorder(),
+                                                                    onPressed: () =>
+                                                                        Navigator.of(
+                                                                          context,
+                                                                        ).pop(),
+                                                                    child: Icon(
+                                                                      Icons
+                                                                          .close,
+                                                                      color:
+                                                                          appColorBlack,
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                                context:
+                                                                    context,
+                                                                builder:
+                                                                    (context) =>
+                                                                        Container(),
+                                                              );
+                                                            },
+                                                        ),
+                                                      ],
                                                     ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            Text(
+                                              "NB : La création d'un compte "
+                                              "suppose que tu as consulté et "
+                                              "accepté les Conditions Générales "
+                                              "d'Utilisation et la Politique "
+                                              "de Confidentialité.",
+                                              style: TextStyle(
+                                                color: Colors.red,
+                                                fontSize: 13.sp,
                                               ),
-                                              context: context,
-                                              builder: (context) => Container(),
-                                            );
-                                          },
+                                            ),
+                                          ],
+                                        ),
                                       ),
-                                    ],
+                                    ),
                                   ),
-                                ),
+                                ],
                               ),
                             ],
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
+                );
+              },
+            ),
+          ),
+
+          /// BACK BUTTON + LOGO
+          Positioned(
+            top: 4.h,
+            left: 2.w,
+            child: Row(
+              children: [
+                FloatingActionButton.small(
+                  backgroundColor: appColorWhite,
+                  elevation: 0,
+                  shape: CircleBorder(),
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Icon(Icons.arrow_back_ios_outlined, color: appColor),
                 ),
+                Image.asset("assets/images/logo_color.png"),
               ],
             ),
           ),
-        ),
+        ],
       ),
     );
   }
+}
+
+class NewClipperR extends CustomClipper<Path> {
+  final double leftOffset;
+
+  NewClipperR({this.leftOffset = 80.0});
+
+  @override
+  Path getClip(Size size) {
+    Path path = Path();
+
+    path.moveTo(0, leftOffset);
+
+    path.cubicTo(
+      size.width * 0.20,
+      -25.0,
+      size.width * 0.90,
+      -8.0,
+      size.width,
+      50.0,
+    );
+
+    path.lineTo(size.width, size.height);
+    path.lineTo(0, size.height);
+    path.close();
+
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }

@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl_phone_number_input/intl_phone_number_input.dart';
-import 'package:opassage/features/intro/intro.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../../core/constants/constants.dart';
@@ -13,7 +12,8 @@ import '../../../core/themes/themes.dart';
 import '../../../core/utils/utils.dart';
 import '../../../core/widgets/buttons/buttons.dart';
 import '../../../core/widgets/inputs/inputs.dart';
-import '../../menu/pages/menu_page.dart';
+import '../../opasseur/menu/menu.dart';
+import '../../proprio/menu/menu.dart';
 import '../auth.dart';
 
 class LoginPage extends StatefulWidget {
@@ -126,12 +126,10 @@ class _LoginPageState extends State<LoginPage> {
                             : Container(
                                 padding: EdgeInsets.symmetric(horizontal: 4.w),
                                 decoration: BoxDecoration(
-                                  color: appColorWhite,
+                                  color: appColor.withValues(alpha: .05),
                                   borderRadius: BorderRadius.circular(3.w),
                                   border: Border.all(
-                                    color: _isFocused
-                                        ? appColor
-                                        : Colors.transparent,
+                                    color: _isFocused ? appColor : appColor,
                                     width: 2,
                                   ),
                                 ),
@@ -149,9 +147,8 @@ class _LoginPageState extends State<LoginPage> {
                                   ),
                                   ignoreBlank: false,
                                   autoValidateMode: AutovalidateMode.disabled,
-                                  selectorTextStyle: const TextStyle(
-                                    color: Colors.black,
-                                  ),
+                                  selectorTextStyle: TextStyle(color: appColor),
+                                  countries: ['CI'],
                                   initialValue: number,
                                   textFieldController: login,
                                   formatInput: true,
@@ -244,24 +241,6 @@ class _LoginPageState extends State<LoginPage> {
                             }
                           },
                         ),
-                        Gap(3.h),
-                        Center(
-                          child: TextButton(
-                            onPressed: () {
-                              Navigator.of(context).pushReplacement(
-                                MaterialPageRoute(builder: (_) => IntroPage()),
-                              );
-                            },
-                            child: Text(
-                              "Pas encore de compte ? ${AppConstants.btnRegister}",
-                              style: TextStyle(
-                                color: appColor,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14.sp,
-                              ),
-                            ),
-                          ),
-                        ),
                       ],
                     ),
                   ),
@@ -346,11 +325,19 @@ class _LoginPageState extends State<LoginPage> {
 
         SnackbarHelper.showSuccess(context, responseData['message']);
 
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => const MenuPage()),
-          (route) => false,
-        );
+        if (responseData['data']['role'] == 'opasseur') {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const MenuProprioPage()),
+            (route) => false,
+          );
+        } else {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const MenuPage()),
+            (route) => false,
+          );
+        }
       } else if (response.statusCode == 401) {
         Navigator.pop(context);
         SnackbarHelper.showWarning(context, responseData['message']);

@@ -92,12 +92,12 @@ class _ForgotPageState extends State<ForgotPage> {
                         Container(
                           padding: EdgeInsets.only(left: 4.w),
                           decoration: BoxDecoration(
-                            color: appColorWhite,
+                            color: appColor.withValues(alpha: .05),
                             borderRadius: BorderRadius.circular(3.w),
                             border: Border.all(
                               color: _isFocused
                                   ? appColor
-                                  : Colors.transparent,
+                                  : appColor,
                               width: 2,
                             ),
                           ),
@@ -114,9 +114,10 @@ class _ForgotPageState extends State<ForgotPage> {
                             ),
                             ignoreBlank: false,
                             autoValidateMode: AutovalidateMode.disabled,
-                            selectorTextStyle: const TextStyle(
-                              color: Colors.black,
+                            selectorTextStyle: TextStyle(
+                              color: appColor,
                             ),
+                            countries: ['CI'],
                             initialValue: number,
                             textFieldController: login,
                             formatInput: true,

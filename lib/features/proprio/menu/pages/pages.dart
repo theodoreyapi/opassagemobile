@@ -1,0 +1,1 @@
+export 'menu_proprio_page.dart';

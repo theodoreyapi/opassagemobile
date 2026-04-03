@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:opassage/core/themes/themes.dart';
-import 'package:opassage/features/menu/pages/menu_page.dart';
 import 'package:opassage/features/splash/pages/pages.dart';
+
+import '../../opasseur/menu/menu.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});

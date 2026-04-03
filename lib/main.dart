@@ -4,7 +4,7 @@ import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:opassage/features/reservation/reservation.dart';
+import 'package:opassage/features/opasseur/reservation/reservation.dart';
 import 'package:opassage/features/splash/spalsh.dart';
 import 'package:sizer/sizer.dart';
 
@@ -85,7 +85,7 @@ class _MyAppState extends State<MyApp> {
           },
           theme: ThemeData(
             colorScheme: ColorScheme.fromSeed(seedColor: appColor),
-            textTheme: GoogleFonts.interTextTheme(),
+            textTheme: GoogleFonts.robotoFlexTextTheme(),
             useMaterial3: true,
           ),
           home: SplashPage(),

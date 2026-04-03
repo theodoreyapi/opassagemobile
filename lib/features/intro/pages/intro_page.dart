@@ -9,13 +9,13 @@ import 'package:opassage/core/themes/themes.dart';
 import 'package:opassage/core/utils/utils.dart';
 import 'package:opassage/core/widgets/widgets.dart';
 import 'package:opassage/features/auth/auth.dart';
-import 'package:opassage/features/menu/menu.dart';
 import 'package:pinput/pinput.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../../core/constants/constants.dart';
 import '../../../services/auth_service.dart';
+import '../../opasseur/menu/menu.dart';
 
 class IntroPage extends StatefulWidget {
   const IntroPage({super.key});
@@ -559,6 +559,11 @@ class _OnboardSlideState extends State<OnboardSlide> {
           ],
         ),
 
+        Positioned(
+          left: 10,
+          top: 35,
+          child: Image.asset("assets/images/logo_color.png"),
+        ),
         Positioned(
           right: 0,
           top: 20,
