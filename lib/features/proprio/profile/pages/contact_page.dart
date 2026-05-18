@@ -1,14 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:opassage/core/themes/themes.dart';
 
 class ContactUsScreen extends StatelessWidget {
+  const ContactUsScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(Icons.arrow_back, color: appColor),
           onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          "Nous contacter",
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: appColor,
+          ),
         ),
         backgroundColor: Colors.white,
         elevation: 0,
@@ -18,17 +29,6 @@ class ContactUsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Titre principal
-            const Text(
-              "Nous contacter",
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-            ),
-            const SizedBox(height: 15),
-
             // Description
             Text(
               "Vous pouvez nous appeler si vous\nrencontrez un problème ou pour tout autre\nbesoin",

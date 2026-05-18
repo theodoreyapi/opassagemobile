@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:opassage/core/themes/themes.dart';
+import 'package:sizer/sizer.dart';
 
 class RateAppScreen extends StatefulWidget {
+  const RateAppScreen({super.key});
+
   @override
   State<RateAppScreen> createState() => _RateAppScreenState();
 }
@@ -12,13 +16,13 @@ class _RateAppScreenState extends State<RateAppScreen> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(Icons.arrow_back, color: appColor),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          "Noter Votre application",
+        title: Text(
+          "Noter ton application",
           style: TextStyle(
-            color: Colors.black,
+            color: appColor,
             fontWeight: FontWeight.bold,
             fontSize: 18,
           ),
@@ -36,17 +40,17 @@ class _RateAppScreenState extends State<RateAppScreen> {
             // Illustration de l'étoile centrale
             Center(
               child: Container(
-                width: 140,
-                height: 140,
+                width: 100,
+                height: 100,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFFDE7), // Jaune très pâle
+                  color: appColor,
                   shape: BoxShape.circle,
                 ),
                 child: Center(
                   child: Icon(
                     Icons.star_border_rounded,
                     size: 80,
-                    color: Colors.yellow[700],
+                    color: appColorSecond,
                   ),
                 ),
               ),
@@ -55,30 +59,27 @@ class _RateAppScreenState extends State<RateAppScreen> {
             const SizedBox(height: 30),
 
             // Textes
-            const Text(
-              "Votre avis compte !",
+            Text(
+              "Ton avis compte !",
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Colors.black,
+                color: appColor,
               ),
             ),
             const SizedBox(height: 15),
             Text(
-              "Aimez-vous utiliser O’Passeur ? aidez-nous à nous\naméliorer en nous laissant vos avis",
+              "Aimez-vous utiliser O’Passeur? aides nous à nous améliorer "
+              "en nous laissant vos avis stp",
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[600],
-                height: 1.4,
-              ),
+              style: TextStyle(fontSize: 14, color: appColor, height: 1.4),
             ),
 
             const SizedBox(height: 50),
 
             // Bouton App Store
             _buildStoreButton(
-              logoPath: 'assets/app_store_logo.png', // À remplacer par votre asset
+              // À remplacer par votre asset
               title: "Download on the",
               storeName: "App Store",
               onTap: () {},
@@ -88,7 +89,7 @@ class _RateAppScreenState extends State<RateAppScreen> {
 
             // Bouton Google Play
             _buildStoreButton(
-              logoPath: 'assets/google_play_logo.png', // À remplacer par votre asset
+              // À remplacer par votre asset
               title: "GET IT ON",
               storeName: "Google Play",
               onTap: () {},
@@ -100,37 +101,38 @@ class _RateAppScreenState extends State<RateAppScreen> {
   }
 
   Widget _buildStoreButton({
-    required String logoPath,
     required String title,
     required String storeName,
     required VoidCallback onTap,
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE8EAF6)), // Bordure bleue très claire
+        color: appColorSecond.withValues(alpha: .1),
+        borderRadius: BorderRadius.circular(3.w),
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-        leading: Container(
-          width: 120, // Largeur pour simuler le bloc logo + texte du store
-          child: Row(
-            children: [
-              const Icon(Icons.apps, color: Colors.blueGrey), // Placeholder pour le logo
-              const SizedBox(width: 10),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(title, style: const TextStyle(fontSize: 9, color: Colors.grey)),
-                  Text(storeName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                ],
-              ),
-            ],
-          ),
+        title: Row(
+          children: [
+            Icon(Icons.apps, color: appColor),
+            const SizedBox(width: 10),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: TextStyle(fontSize: 9, color: appColor)),
+                Text(
+                  storeName,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: appColor,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
-        trailing: const Icon(Icons.chevron_right, color: Colors.blueGrey),
+        trailing: Icon(Icons.chevron_right, color: appColor),
         onTap: onTap,
       ),
     );

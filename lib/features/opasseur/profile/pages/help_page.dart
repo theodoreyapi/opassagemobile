@@ -1,23 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:opassage/core/themes/themes.dart';
+import 'package:sizer/sizer.dart';
 
 import '../profile.dart';
 
 class HelpAndAccountScreen extends StatelessWidget {
+  const HelpAndAccountScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FE), // Fond gris très clair
+      backgroundColor: Colors.white,
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(Icons.arrow_back, color: appColor),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           "Aide et gestion de compte",
           style: TextStyle(
-            color: Colors.black,
+            color: appColor,
             fontWeight: FontWeight.bold,
-            fontSize: 18,
+            fontSize: 18.sp,
           ),
         ),
         backgroundColor: Colors.white,
@@ -72,7 +76,9 @@ class HelpAndAccountScreen extends StatelessWidget {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => AccountManagementScreen()),
+                    MaterialPageRoute(
+                      builder: (_) => AccountManagementScreen(),
+                    ),
                   );
                 },
               ),
@@ -88,7 +94,7 @@ class HelpAndAccountScreen extends StatelessWidget {
               ),
               _buildListTile(
                 Icons.menu_book_outlined,
-                "Instructives",
+                "Incentives",
                 onTap: () {
                   Navigator.push(
                     context,
@@ -105,65 +111,49 @@ class HelpAndAccountScreen extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(15),
+                color: appColorSecond.withValues(alpha: .1),
+                borderRadius: BorderRadius.circular(3.w),
               ),
               child: Column(
                 children: [
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF3E5F5), // Violet très clair
+                      color: appColor, // Violet très clair
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.card_giftcard,
-                      color: Colors.purple,
+                      color: appColorSecond,
                       size: 30,
                     ),
                   ),
                   const SizedBox(height: 15),
-                  const Text(
+                  Text(
                     "Parrainage",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.bold,
+                      color: appColor,
+                    ),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
+                  Text(
                     "Je partage mon code parrainage\net je gagne 1000 FCFA",
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Colors.black87,
-                      fontSize: 14,
+                      color: appColor,
+                      fontSize: 16.sp,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                   const SizedBox(height: 15),
                   Text(
-                    "Pour obtenir votre bonus, vous et votre amie devez avoir consommé une réservation d'un montant minimal de 15 000 FCFA",
+                    "Pour obtenir votre bonus, vous et votre amie devez "
+                    "avoir consommé une réservation d'un montant minimal "
+                    "de 15 000 FCFA",
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.grey[600], fontSize: 11),
-                  ),
-                  const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFFD700), // Jaune/Or
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: const Text(
-                        "Inviter un ami",
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
+                    style: TextStyle(color: Colors.grey, fontSize: 14.sp),
                   ),
                 ],
               ),
@@ -171,14 +161,38 @@ class HelpAndAccountScreen extends StatelessWidget {
 
             const SizedBox(height: 30),
 
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: () {},
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: appColor, // Jaune/Or
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(3.w),
+                  ),
+                  elevation: 0,
+                ),
+                child: Text(
+                  "J'invite mon ami(e",
+                  style: TextStyle(
+                    color: appColorSecond,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
             // Bouton supprimer le compte
             Center(
               child: TextButton(
                 onPressed: () {},
-                child: const Text(
+                child: Text(
                   "Supprimer mon compte",
                   style: TextStyle(
-                    color: Colors.purple,
+                    color: appColor,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -198,8 +212,8 @@ class HelpAndAccountScreen extends StatelessWidget {
       child: Text(
         title,
         style: TextStyle(
-          color: Colors.grey[700],
-          fontSize: 13,
+          color: appColor,
+          fontSize: 15.sp,
           fontWeight: FontWeight.bold,
         ),
       ),
@@ -210,8 +224,8 @@ class HelpAndAccountScreen extends StatelessWidget {
   Widget _buildActionGroup(List<Widget> children) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: appColorSecond.withValues(alpha: .1),
+        borderRadius: BorderRadius.circular(3.w),
       ),
       child: Column(children: children),
     );
@@ -222,20 +236,16 @@ class HelpAndAccountScreen extends StatelessWidget {
     return Column(
       children: [
         ListTile(
-          leading: Icon(icon, color: const Color(0xFF1A237E), size: 22),
+          leading: Icon(icon, color: appColor, size: 22),
           title: Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w500,
-              color: Colors.black87,
+              color: appColor,
             ),
           ),
-          trailing: const Icon(
-            Icons.chevron_right,
-            color: Colors.black,
-            size: 20,
-          ),
+          trailing: Icon(Icons.chevron_right, color: appColor, size: 20),
           onTap: onTap,
         ),
         // On n'ajoute pas de Divider après le dernier élément (géré par la logique de la liste si besoin)

@@ -48,7 +48,7 @@ class ProfileScreen extends StatelessWidget {
                         ),
                         SizedBox(width: 4),
                         Text(
-                          "Hôte",
+                          "O'Passeur classic",
                           style: TextStyle(color: appColorSecond, fontSize: 12),
                         ),
                       ],
@@ -76,16 +76,19 @@ class ProfileScreen extends StatelessWidget {
                       children: [
                         Icon(
                           Icons.report_problem_outlined,
-                          color: Colors.orange,
+                          color: appColorSecond,
                           size: 30,
                         ),
                         SizedBox(width: 15),
                         Expanded(
                           child: Text(
-                            "Augmentez votre score en acceptant un de nos "
-                            "hébergement et continuez de profiter "
+                            "Augmente ton score en acceptant un de nos "
+                            "hébergements et continue de profiter "
                             "d'expériences inédites",
-                            style: TextStyle(color: Colors.white, fontSize: 13),
+                            style: TextStyle(
+                              color: appColorSecond,
+                              fontSize: 13.sp,
+                            ),
                           ),
                         ),
                       ],
@@ -97,10 +100,13 @@ class ProfileScreen extends StatelessWidget {
                   _buildSectionTitle("MENU"),
                   _buildMenuItem(
                     Icons.assignment_outlined,
-                    "Mes nouvelles commandes",
+                    "Mes réservations confirmées",
                   ),
-                  _buildMenuItem(Icons.history, "Historique"),
                   _buildMenuItem(Icons.favorite_border, "Mes Favoris"),
+                  _buildMenuItem(
+                    Icons.confirmation_number_outlined,
+                    "Codes promos et privilèges",
+                  ),
 
                   SizedBox(height: 30),
 
@@ -114,7 +120,7 @@ class ProfileScreen extends StatelessWidget {
                           icon: Icons.workspace_premium_outlined,
                           text:
                               "Migrez vers un compte O'Passeur Prime et"
-                                  " bénéficiez de nombreux avantages",
+                              " bénéficiez de nombreux avantages",
                           color: Color(0xFFDDE3F0), // Bleu-gris
                           iconColor: Colors.purple,
                         ),
@@ -123,7 +129,7 @@ class ProfileScreen extends StatelessWidget {
                           icon: Icons.verified_user_outlined,
                           text:
                               "Migrez vers un compte O'Passeur Prime et "
-                                  "bénéficiez de nombreux avantages",
+                              "bénéficiez de nombreux avantages",
                           color: Color(0xFFC8E6C9), // Vert clair
                           iconColor: Colors.green,
                         ),
@@ -136,21 +142,22 @@ class ProfileScreen extends StatelessWidget {
                   // Section ACCUEIL (Navigation technique)
                   _buildSectionTitle("ACCUEIL"),
                   _buildMenuItem(
-                    Icons.confirmation_number_outlined,
-                    "Code promo et privilège",
+                    Icons.notifications_none,
+                    "Mes nouvelles commandes",
                   ),
-                  _buildMenuItem(Icons.notifications_none, "Notifications"),
                   _buildMenuItem(
                     Icons.access_time,
                     "Aides et gestion du compte",
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => HelpAndAccountScreen()),
+                        MaterialPageRoute(
+                          builder: (_) => HelpAndAccountScreen(),
+                        ),
                       );
                     },
                   ),
-                  _buildMenuItem(Icons.calendar_today_outlined, "Réservations"),
+                  _buildMenuItem(Icons.calendar_today_outlined, "Mes réservations usées"),
                   _buildMenuItem(Icons.logout, "Déconnexion", isLogout: true),
 
                   SizedBox(height: 50),
